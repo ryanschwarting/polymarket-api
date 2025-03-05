@@ -281,6 +281,7 @@ export default function AllMarkets() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<"volume" | "liquidity">("volume");
 
   // Predefined categories
   const categories = [
@@ -385,22 +386,31 @@ export default function AllMarkets() {
   };
 
   // Filter markets based on search query and selected categories
-  const filteredMarkets = markets.filter((market) => {
-    // Search query filter
-    const matchesSearch =
-      market.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (market.question &&
-        market.question.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (market.category &&
-        market.category.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredMarkets = markets
+    .filter((market) => {
+      // Search query filter
+      const matchesSearch =
+        market.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (market.question &&
+          market.question.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (market.category &&
+          market.category.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // Category filter
-    const matchesCategory =
-      selectedCategories.length === 0 || // If no categories selected, show all
-      (market.category && selectedCategories.includes(market.category));
+      // Category filter
+      const matchesCategory =
+        selectedCategories.length === 0 || // If no categories selected, show all
+        (market.category && selectedCategories.includes(market.category));
 
-    return matchesSearch && matchesCategory;
-  });
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      // Sort by selected sort option
+      if (sortBy === "volume") {
+        return b.volume - a.volume; // Highest volume first
+      } else {
+        return b.liquidity - a.liquidity; // Highest liquidity first
+      }
+    });
 
   // Update hasMore based on filtered markets
   useEffect(() => {
@@ -438,6 +448,11 @@ export default function AllMarkets() {
   // Function to toggle filter dropdown
   const toggleFilter = () => {
     setIsFilterOpen((prev) => !prev);
+  };
+
+  // Function to set sort option
+  const handleSortChange = (option: "volume" | "liquidity") => {
+    setSortBy(option);
   };
 
   // Function to close filter dropdown when clicking outside
@@ -490,6 +505,35 @@ export default function AllMarkets() {
             </div>
           </div>
 
+          {/* Sort Button */}
+          <div className="relative">
+            <button
+              onClick={() =>
+                handleSortChange(sortBy === "volume" ? "liquidity" : "volume")
+              }
+              className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Toggle sort order"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                />
+              </svg>
+              <span className="text-gray-700">
+                Sort: {sortBy === "volume" ? "Volume" : "Liquidity"}
+              </span>
+            </button>
+          </div>
+
           {/* Filter Button */}
           <div className="relative">
             <button
@@ -528,6 +572,47 @@ export default function AllMarkets() {
                 id="filter-dropdown"
                 className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
               >
+                {/* Sort Options */}
+                <div className="p-3 border-b border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Sort By
+                  </h3>
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex items-center">
+                      <input
+                        id="sort-volume"
+                        type="radio"
+                        name="sort-option"
+                        checked={sortBy === "volume"}
+                        onChange={() => handleSortChange("volume")}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <label
+                        htmlFor="sort-volume"
+                        className="ml-2 text-sm text-gray-700"
+                      >
+                        Highest Volume
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        id="sort-liquidity"
+                        type="radio"
+                        name="sort-option"
+                        checked={sortBy === "liquidity"}
+                        onChange={() => handleSortChange("liquidity")}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <label
+                        htmlFor="sort-liquidity"
+                        className="ml-2 text-sm text-gray-700"
+                      >
+                        Highest Liquidity
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="p-3 border-b border-gray-200">
                   <h3 className="text-sm font-semibold text-gray-700">
                     Filter by Category
