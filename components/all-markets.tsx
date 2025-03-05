@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -101,18 +101,6 @@ function OutcomesModal({
           if (!nestedMarket.outcomes || !nestedMarket.outcomePrices)
             return null;
 
-          // Parse outcomes if needed
-          let outcomes = [];
-          if (Array.isArray(nestedMarket.outcomes)) {
-            outcomes = nestedMarket.outcomes;
-          } else if (typeof nestedMarket.outcomes === "string") {
-            try {
-              outcomes = JSON.parse(nestedMarket.outcomes);
-            } catch (e) {
-              outcomes = [];
-            }
-          }
-
           // Parse prices if needed
           let prices = {};
           if (Array.isArray(nestedMarket.outcomePrices)) {
@@ -120,11 +108,9 @@ function OutcomesModal({
           } else if (typeof nestedMarket.outcomePrices === "string") {
             try {
               prices = JSON.parse(nestedMarket.outcomePrices);
-            } catch (e) {
+            } catch {
               prices = {};
             }
-          } else if (nestedMarket.outcomePrices) {
-            prices = nestedMarket.outcomePrices;
           }
 
           // Get the "Yes" price
@@ -219,9 +205,6 @@ function OutcomesModal({
         {/* Modal content */}
         <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-6">
           <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">
-              Market Outcomes
-            </h4>
             {processedOutcomes.length > 0 ? (
               <div className="space-y-2">
                 {processedOutcomes.map((item) => {
@@ -279,22 +262,17 @@ function OutcomesModal({
 
 export default function AllMarkets() {
   const [markets, setMarkets] = useState<Market[]>([]);
+  const [visibleMarkets, setVisibleMarkets] = useState<number>(24);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [expandedMarket, setExpandedMarket] = useState<string | null>(null);
-  const [visibleMarkets, setVisibleMarkets] = useState<number>(24); // Show 24 markets initially (8 rows of 3)
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Only fetch markets on initial load
-    fetchMarkets(false);
-  }, []); // Empty dependency array to ensure it only runs once on mount
-
-  async function fetchMarkets(isLoadingMore = false) {
+  // Wrap fetchMarkets in useCallback to prevent it from changing on every render
+  const fetchMarkets = useCallback(async (isLoadingMore = false) => {
     try {
       if (!isLoadingMore) {
         setLoading(true);
@@ -302,115 +280,86 @@ export default function AllMarkets() {
         setLoadingMore(true);
       }
 
-      const response = await fetch("/api/markets");
-
-      if (!response.ok) {
-        throw new Error(`API returned status: ${response.status}`);
-      }
-
+      // Fetch markets from our API
+      const response = await fetch(`/api/markets`);
       const data: MarketsResponse = await response.json();
 
-      if (data.success && data.markets) {
-        setMarkets(data.markets);
-        const currentVisibleCount = isLoadingMore ? visibleMarkets : 24;
-        setHasMore(data.markets.length > currentVisibleCount);
+      if (data.success && Array.isArray(data.markets)) {
+        if (isLoadingMore) {
+          // Append new markets to existing ones
+          setMarkets((prevMarkets) => [...prevMarkets, ...data.markets]);
+        } else {
+          // Replace existing markets
+          setMarkets(data.markets);
+        }
       } else {
-        setError(data.message || "Failed to fetch markets");
+        console.error("Failed to fetch markets:", data.message);
+        setErrorMessage(data.message || "Failed to fetch markets");
       }
     } catch (err) {
-      setError(
+      console.error("Error fetching markets:", err);
+      setErrorMessage(
         err instanceof Error ? err.message : "An unknown error occurred"
       );
-      console.error("Error fetching markets:", err);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    // Only fetch markets on initial load
+    fetchMarkets(false);
+  }, [fetchMarkets]); // Add fetchMarkets to dependency array
 
   const loadMore = () => {
-    if (loadingMore) return; // Prevent multiple clicks
-
-    const newVisibleCount = visibleMarkets + 24;
-    setVisibleMarkets(newVisibleCount);
-    // Check if we need to fetch more markets or just show more from what we already have
-    if (markets.length > newVisibleCount) {
-      // We already have more markets loaded, just update hasMore
+    if (hasMore && !loadingMore) {
+      const newVisibleCount = visibleMarkets + 24;
+      setVisibleMarkets(newVisibleCount);
       setHasMore(markets.length > newVisibleCount);
-    } else {
-      // We need to fetch more markets
-      fetchMarkets(true);
     }
   };
 
-  // Format volume as currency
+  // Format currency for display
   const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(1)}K`;
+    } else {
+      return `$${value.toFixed(0)}`;
+    }
   };
 
-  // Format date
+  // Format date for display
   const formatDate = (dateString: string): string => {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        return "N/A";
+        return "TBD";
       }
 
-      return new Intl.DateTimeFormat("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }).format(date);
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "N/A";
+      const now = new Date();
+      const diffTime = date.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) {
+        return "Ended";
+      } else if (diffDays === 0) {
+        return "Today";
+      } else if (diffDays === 1) {
+        return "Tomorrow";
+      } else if (diffDays < 7) {
+        return `${diffDays} days`;
+      } else {
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+      }
+    } catch {
+      return "Invalid date";
     }
-  };
-
-  // Format percentage
-  const formatPercentage = (value: number): string => {
-    return `${(value * 100).toFixed(0)}%`;
-  };
-
-  // Helper function to determine text color based on price
-  const getPriceColorClass = (price: number): string => {
-    if (price > 0.5) return "text-green-600";
-    if (price > 0.2) return "text-amber-600";
-    if (price > 0.05) return "text-orange-600";
-    return "text-red-600";
-  };
-
-  // Toggle expanded market
-  const toggleExpandedMarket = (marketId: string) => {
-    if (expandedMarket === marketId) {
-      setExpandedMarket(null);
-    } else {
-      setExpandedMarket(marketId);
-    }
-  };
-
-  // Map category to emoji
-  const categoryIcons: Record<string, string> = {
-    Politics: "🗳️",
-    Crypto: "💰",
-    Sports: "🏆",
-    New: "🆕",
-    Economy: "📈",
-    Uncategorized: "❓",
-  };
-
-  // Default images by category
-  const defaultImages: Record<string, string> = {
-    Politics: "https://via.placeholder.com/64x64/4299e1/ffffff?text=P",
-    Crypto: "https://via.placeholder.com/64x64/805ad5/ffffff?text=C",
-    Sports: "https://via.placeholder.com/64x64/38a169/ffffff?text=S",
-    Economy: "https://via.placeholder.com/64x64/dd6b20/ffffff?text=E",
-    Uncategorized: "https://via.placeholder.com/64x64/718096/ffffff?text=?",
   };
 
   // Filter markets based on search query
@@ -419,8 +368,8 @@ export default function AllMarkets() {
       market.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (market.question &&
         market.question.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (market.description &&
-        market.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      (market.category &&
+        market.category.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   // Update hasMore based on filtered markets
@@ -473,10 +422,10 @@ export default function AllMarkets() {
         </div>
       </div>
 
-      {error ? (
+      {errorMessage ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
           <strong className="font-bold">Error: </strong>
-          <span className="block sm:inline">{error}</span>
+          <span className="block sm:inline">{errorMessage}</span>
         </div>
       ) : (
         <div className="relative">
@@ -592,7 +541,7 @@ export default function AllMarkets() {
                                 d="M9 5l7 7-7 7"
                               />
                             </svg>
-                            See Outcomes
+                            See Outcome Odds
                           </button>
                           <Link
                             href={`https://polymarket.com/event/${market.slug}`}
@@ -644,7 +593,7 @@ export default function AllMarkets() {
               ) : (
                 <div className="text-center py-16">
                   <p className="text-lg text-gray-600">
-                    No markets found matching "{searchQuery}"
+                    No markets found matching &quot;{searchQuery}&quot;
                   </p>
                   {searchQuery && (
                     <button

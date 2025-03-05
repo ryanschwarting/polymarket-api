@@ -503,7 +503,9 @@ export async function GET() {
             // Check if outcomes exists on the nested market using type assertion
             // This is necessary because the TypeScript interface might not include outcomes
             // but we know it exists in the actual API response
-            return parseOutcomes((nestedMarket as any).outcomes);
+            return parseOutcomes(
+              (nestedMarket as { outcomes?: string }).outcomes
+            );
           })
           .filter((outcomes) => outcomes.length > 0);
 
@@ -558,66 +560,79 @@ export async function GET() {
 
       // Process nested markets if they exist
       if (market.markets && market.markets.length > 0) {
-        const nestedMarkets = market.markets.map((nestedMarket: any) => {
-          // Extract outcomes and outcome prices from nested market
-          let nestedOutcomes: string[] = [];
-          let nestedOutcomePrices: number[] | Record<string, number> = [];
+        const nestedMarkets = market.markets.map(
+          (nestedMarket: {
+            id?: string;
+            question?: string;
+            conditionId?: string;
+            outcomes?: string | string[];
+            outcomePrices?: string | number[] | Record<string, number>;
+            endDate?: string;
+            liquidity?: number;
+            groupItemTitle?: string;
+            image?: string;
+            icon?: string;
+          }) => {
+            // Extract outcomes and outcome prices from nested market
+            let nestedOutcomes: string[] = [];
+            let nestedOutcomePrices: number[] | Record<string, number> = [];
 
-          // Parse outcomes if available as string
-          if (typeof nestedMarket.outcomes === "string") {
-            try {
-              nestedOutcomes = JSON.parse(nestedMarket.outcomes);
-            } catch (e) {
-              // If parsing fails, use empty array
-              nestedOutcomes = [];
-            }
-          } else if (Array.isArray(nestedMarket.outcomes)) {
-            nestedOutcomes = nestedMarket.outcomes;
-          }
-
-          // Parse outcome prices if available as string
-          if (typeof nestedMarket.outcomePrices === "string") {
-            try {
-              const parsedPrices = JSON.parse(nestedMarket.outcomePrices);
-              // Convert string prices to numbers if needed
-              if (Array.isArray(parsedPrices)) {
-                nestedOutcomePrices = parsedPrices.map((price) =>
-                  typeof price === "string" ? parseFloat(price) : price
-                );
-              } else if (typeof parsedPrices === "object") {
-                nestedOutcomePrices = {} as Record<string, number>;
-                Object.keys(parsedPrices).forEach((key) => {
-                  const price = parsedPrices[key];
-                  (nestedOutcomePrices as Record<string, number>)[key] =
-                    typeof price === "string" ? parseFloat(price) : price;
-                });
+            // Parse outcomes if available as string
+            if (typeof nestedMarket.outcomes === "string") {
+              try {
+                nestedOutcomes = JSON.parse(nestedMarket.outcomes);
+              } catch {
+                // If parsing fails, use empty array
+                nestedOutcomes = [];
               }
-            } catch (e) {
-              // If parsing fails, use empty array
-              nestedOutcomePrices = [];
+            } else if (Array.isArray(nestedMarket.outcomes)) {
+              nestedOutcomes = nestedMarket.outcomes;
             }
-          } else if (nestedMarket.outcomePrices) {
-            nestedOutcomePrices = nestedMarket.outcomePrices;
+
+            // Parse outcome prices if available as string
+            if (typeof nestedMarket.outcomePrices === "string") {
+              try {
+                const parsedPrices = JSON.parse(nestedMarket.outcomePrices);
+                // Convert string prices to numbers if needed
+                if (Array.isArray(parsedPrices)) {
+                  nestedOutcomePrices = parsedPrices.map((price) =>
+                    typeof price === "string" ? parseFloat(price) : price
+                  );
+                } else if (typeof parsedPrices === "object") {
+                  nestedOutcomePrices = {} as Record<string, number>;
+                  Object.keys(parsedPrices).forEach((key) => {
+                    const price = parsedPrices[key];
+                    (nestedOutcomePrices as Record<string, number>)[key] =
+                      typeof price === "string" ? parseFloat(price) : price;
+                  });
+                }
+              } catch {
+                // If parsing fails, use empty array
+                nestedOutcomePrices = [];
+              }
+            } else if (nestedMarket.outcomePrices) {
+              nestedOutcomePrices = nestedMarket.outcomePrices;
+            }
+
+            // Extract nested market data
+            const formattedNestedMarket: NestedMarket = {
+              id:
+                nestedMarket.id ||
+                `nested-${Math.random().toString(36).substring(2, 9)}`,
+              question: nestedMarket.question || "",
+              conditionId: nestedMarket.conditionId,
+              outcomes: nestedOutcomes,
+              outcomePrices: nestedOutcomePrices,
+              endDate: nestedMarket.endDate || formattedMarket.endDate,
+              liquidity: nestedMarket.liquidity || 0,
+              groupItemTitle: nestedMarket.groupItemTitle || "",
+              image: nestedMarket.image || formattedMarket.image,
+              icon: nestedMarket.icon || formattedMarket.icon,
+            };
+
+            return formattedNestedMarket;
           }
-
-          // Extract nested market data
-          const formattedNestedMarket: NestedMarket = {
-            id:
-              nestedMarket.id ||
-              `nested-${Math.random().toString(36).substring(2, 9)}`,
-            question: nestedMarket.question || "",
-            conditionId: nestedMarket.conditionId,
-            outcomes: nestedOutcomes,
-            outcomePrices: nestedOutcomePrices,
-            endDate: nestedMarket.endDate || formattedMarket.endDate,
-            liquidity: nestedMarket.liquidity || 0,
-            groupItemTitle: nestedMarket.groupItemTitle || "",
-            image: nestedMarket.image || formattedMarket.image,
-            icon: nestedMarket.icon || formattedMarket.icon,
-          };
-
-          return formattedNestedMarket;
-        });
+        );
 
         // Add nested markets to the formatted market
         formattedMarket.nestedMarkets = nestedMarkets;
