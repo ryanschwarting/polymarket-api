@@ -7,17 +7,17 @@ export default function Navbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-white shadow-sm border-b">
+    <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="font-bold text-xl">
+              <Link href="/" className="font-bold text-xl text-indigo-600">
                 Polymarket
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link
+              {/* <Link
                 href="/"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                   pathname === "/"
@@ -25,18 +25,18 @@ export default function Navbar() {
                     : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                 }`}
               >
-                Home
-              </Link>
-              <Link
-                href="/markets"
+                Markets
+              </Link> */}
+              {/* <Link
+                href="/order"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === "/markets"
+                  pathname === "/order"
                     ? "border-indigo-500 text-gray-900"
                     : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                 }`}
               >
-                Markets
-              </Link>
+                Place Order
+              </Link> */}
             </div>
           </div>
           <div className="-mr-2 flex items-center sm:hidden">
@@ -86,17 +86,17 @@ export default function Navbar() {
                 : "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
             }`}
           >
-            Home
+            Markets
           </Link>
           <Link
-            href="/markets"
+            href="/order"
             className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-              pathname === "/markets"
+              pathname === "/order"
                 ? "bg-indigo-50 border-indigo-500 text-indigo-700"
                 : "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
             }`}
           >
-            Markets
+            Place Order
           </Link>
         </div>
       </div>
