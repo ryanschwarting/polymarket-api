@@ -385,6 +385,24 @@ export default function AllMarkets() {
     }
   };
 
+  // Format start date for display - always shows actual date
+  const formatStartDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "TBD";
+      }
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return "Unknown";
+    }
+  };
+
   // Filter markets based on search query and selected categories
   const filteredMarkets = markets
     .filter((market) => {
@@ -738,16 +756,23 @@ export default function AllMarkets() {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center mb-1">
-                              {market.category && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                                  {market.category === "Sports" ? "🏆" : "📊"}{" "}
-                                  {market.category}
-                                </span>
-                              )}
-                              {market.isNew && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  New
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center">
+                                {market.category && (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                    {market.category === "Sports" ? "🏆" : "📊"}{" "}
+                                    {market.category}
+                                  </span>
+                                )}
+                                {market.isNew && (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    New
+                                  </span>
+                                )}
+                              </div>
+                              {market.startDate && (
+                                <span className="text-xs text-gray-400 font-light">
+                                  Created: {formatStartDate(market.startDate)}
                                 </span>
                               )}
                             </div>
