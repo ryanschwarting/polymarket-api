@@ -280,14 +280,6 @@ export default function AllMarkets() {
                             {formatCurrency(market.liquidity)}
                           </p>
                         </div>
-                        <div className="bg-green-50 rounded-lg p-2">
-                          <p className="text-xs text-green-700 font-medium">
-                            End Date
-                          </p>
-                          <p className="text-sm font-bold text-green-900">
-                            {formatDate(market.endDate)}
-                          </p>
-                        </div>
                         <div className="bg-amber-50 rounded-lg p-2">
                           <p className="text-xs text-amber-700 font-medium">
                             24h Volume
@@ -296,6 +288,14 @@ export default function AllMarkets() {
                             {market.volume24hr
                               ? formatCurrency(market.volume24hr)
                               : "N/A"}
+                          </p>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-2">
+                          <p className="text-xs text-green-700 font-medium">
+                            End Date
+                          </p>
+                          <p className="text-sm font-bold text-green-900">
+                            {formatDate(market.endDate)}
                           </p>
                         </div>
                       </div>
