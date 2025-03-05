@@ -1,6 +1,6 @@
 "use client";
 
-import AllMarkets from "@/components/AllMarkets";
+import AllMarkets from "@/components/all-markets";
 
 export default function Home() {
   return (
@@ -88,8 +88,7 @@ export default function Home() {
       </div>
 
       {/* Markets Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h2 className="text-3xl font-bold text-gray-900 mb-8">All Markets</h2>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4 py-8">
         <AllMarkets />
       </div>
     </main>

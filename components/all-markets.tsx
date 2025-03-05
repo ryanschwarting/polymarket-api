@@ -287,6 +287,7 @@ export default function AllMarkets() {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     // Only fetch markets on initial load
@@ -412,8 +413,23 @@ export default function AllMarkets() {
     Uncategorized: "https://via.placeholder.com/64x64/718096/ffffff?text=?",
   };
 
+  // Filter markets based on search query
+  const filteredMarkets = markets.filter(
+    (market) =>
+      market.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (market.question &&
+        market.question.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (market.description &&
+        market.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  // Update hasMore based on filtered markets
+  useEffect(() => {
+    setHasMore(filteredMarkets.length > visibleMarkets);
+  }, [filteredMarkets, visibleMarkets]);
+
   // Get current markets to display
-  const currentMarkets = markets.slice(0, visibleMarkets);
+  const currentMarkets = filteredMarkets.slice(0, visibleMarkets);
 
   // Function to open the outcomes modal
   const openOutcomesModal = (market: Market) => {
@@ -428,7 +444,34 @@ export default function AllMarkets() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">All Markets</h1>
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search markets..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            aria-label="Search markets"
+          />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            <svg
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
 
       {error ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
@@ -442,195 +485,178 @@ export default function AllMarkets() {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : markets.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {markets.slice(0, visibleMarkets).map((market) => (
-                <div
-                  key={market.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+            <>
+              {filteredMarkets.length > 0 ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
-                  <div className="p-5">
-                    {/* Market Header */}
-                    <div className="flex items-start mb-4">
-                      {market.image && (
-                        <div className="flex-shrink-0 mr-3">
-                          <div className="relative h-12 w-12 rounded-full overflow-hidden">
-                            <Image
-                              src={market.image}
-                              alt={market.title}
-                              fill
-                              sizes="48px"
-                              className="object-cover"
-                            />
+                  {currentMarkets.map((market) => (
+                    <div
+                      key={market.id}
+                      className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+                    >
+                      <div className="p-5">
+                        {/* Market Header */}
+                        <div className="flex items-start mb-4">
+                          {market.image && (
+                            <div className="flex-shrink-0 mr-3">
+                              <div className="relative h-12 w-12 rounded-full overflow-hidden">
+                                <Image
+                                  src={market.image}
+                                  alt={market.title}
+                                  fill
+                                  sizes="48px"
+                                  className="object-cover"
+                                />
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center mb-1">
+                              {market.category && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                                  {market.category === "Sports" ? "🏆" : "📊"}{" "}
+                                  {market.category}
+                                </span>
+                              )}
+                              {market.isNew && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  New
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 truncate">
+                              {market.title}
+                            </h3>
                           </div>
                         </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center mb-1">
-                          {market.category && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                              {market.category === "Sports" ? "🏆" : "📊"}{" "}
-                              {market.category}
-                            </span>
-                          )}
-                          {market.isNew && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              New
-                            </span>
-                          )}
+
+                        {/* Market Stats */}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div className="bg-blue-50 rounded-lg p-2">
+                            <p className="text-xs text-blue-700 font-medium">
+                              Volume
+                            </p>
+                            <p className="text-sm font-bold text-blue-900">
+                              {formatCurrency(market.volume)}
+                            </p>
+                          </div>
+                          <div className="bg-purple-50 rounded-lg p-2">
+                            <p className="text-xs text-purple-700 font-medium">
+                              Liquidity
+                            </p>
+                            <p className="text-sm font-bold text-purple-900">
+                              {formatCurrency(market.liquidity)}
+                            </p>
+                          </div>
+                          <div className="bg-amber-50 rounded-lg p-2">
+                            <p className="text-xs text-amber-700 font-medium">
+                              24h Volume
+                            </p>
+                            <p className="text-sm font-bold text-amber-900">
+                              {market.volume24hr
+                                ? formatCurrency(market.volume24hr)
+                                : "N/A"}
+                            </p>
+                          </div>
+                          <div className="bg-green-50 rounded-lg p-2">
+                            <p className="text-xs text-green-700 font-medium">
+                              End Date
+                            </p>
+                            <p className="text-sm font-bold text-green-900">
+                              {formatDate(market.endDate)}
+                            </p>
+                          </div>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">
-                          {market.title}
-                        </h3>
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                          <button
+                            onClick={() => openOutcomesModal(market)}
+                            className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                            See Outcomes
+                          </button>
+                          <Link
+                            href={`https://polymarket.com/event/${market.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
+                          >
+                            View on Polymarket
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                              />
+                            </svg>
+                          </Link>
+                        </div>
                       </div>
                     </div>
+                  ))}
 
-                    {/* Market Stats */}
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="bg-blue-50 rounded-lg p-2">
-                        <p className="text-xs text-blue-700 font-medium">
-                          Volume
-                        </p>
-                        <p className="text-sm font-bold text-blue-900">
-                          {formatCurrency(market.volume)}
-                        </p>
-                      </div>
-                      <div className="bg-purple-50 rounded-lg p-2">
-                        <p className="text-xs text-purple-700 font-medium">
-                          Liquidity
-                        </p>
-                        <p className="text-sm font-bold text-purple-900">
-                          {formatCurrency(market.liquidity)}
-                        </p>
-                      </div>
-                      <div className="bg-amber-50 rounded-lg p-2">
-                        <p className="text-xs text-amber-700 font-medium">
-                          24h Volume
-                        </p>
-                        <p className="text-sm font-bold text-amber-900">
-                          {market.volume24hr
-                            ? formatCurrency(market.volume24hr)
-                            : "N/A"}
-                        </p>
-                      </div>
-                      <div className="bg-green-50 rounded-lg p-2">
-                        <p className="text-xs text-green-700 font-medium">
-                          End Date
-                        </p>
-                        <p className="text-sm font-bold text-green-900">
-                          {formatDate(market.endDate)}
-                        </p>
-                      </div>
+                  {/* Load More Button */}
+                  {loadingMore && (
+                    <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
+                  )}
 
-                    {/* Action Buttons */}
-                    <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                      <button
-                        onClick={() => openOutcomesModal(market)}
-                        className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 mr-1.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                  {!loadingMore &&
+                    hasMore &&
+                    filteredMarkets.length > visibleMarkets && (
+                      <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center py-8">
+                        <button
+                          onClick={loadMore}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                        See Outcomes
-                      </button>
-                      <Link
-                        href={`https://polymarket.com/event/${market.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
-                      >
-                        View on Polymarket
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 ml-1.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                          />
-                        </svg>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Load More Button */}
-              {markets.length > visibleMarkets && hasMore && (
-                <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center mt-8">
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          className="w-5 h-5 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                        Show More Markets
-                      </>
+                          Load More
+                        </button>
+                      </div>
                     )}
-                  </button>
+                </motion.div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-lg text-gray-600">
+                    No markets found matching "{searchQuery}"
+                  </p>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                    >
+                      Clear Search
+                    </button>
+                  )}
                 </div>
               )}
-            </motion.div>
+            </>
           ) : (
             <div className="text-center py-16">
               <p className="text-lg text-gray-600">No markets available</p>
