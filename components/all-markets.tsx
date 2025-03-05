@@ -202,6 +202,15 @@ function OutcomesModal({
           </button>
         </div>
 
+        {/* Market Description */}
+        {market.description && (
+          <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+            <p className="text-sm text-gray-600 whitespace-pre-line">
+              {market.description}
+            </p>
+          </div>
+        )}
+
         {/* Modal content */}
         <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-6">
           <div className="mb-4">
