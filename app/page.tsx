@@ -34,8 +34,7 @@ export default function Home() {
                 Polymarket Top Markets
               </h1>
               <p className="text-xl md:text-2xl font-medium text-blue-100 max-w-2xl">
-                Explore the highest volume prediction markets, sorted by trading
-                activity
+                Explore top prediction markets, sorted by volume or liquidity
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
@@ -51,7 +50,7 @@ export default function Home() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span>Highest Volume</span>
+                  <span>Volume & Liquidity</span>
                 </div>
                 <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
                   <svg
