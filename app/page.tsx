@@ -1,6 +1,6 @@
 "use client";
 
-import AllMarkets from "@/components/all-markets";
+import AllMarkets from "@/components/polymarket-markets";
 
 export default function Home() {
   return (
