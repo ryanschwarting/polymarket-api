@@ -55,104 +55,130 @@ function OutcomesModal({
     }
   };
 
+  // Process outcomes for display
+  const getProcessedOutcomes = () => {
+    if (
+      market.outcomes &&
+      market.outcomePrices &&
+      Array.isArray(market.outcomes)
+    ) {
+      return market.outcomes
+        .map((outcome, index) => {
+          const price = Array.isArray(market.outcomePrices)
+            ? market.outcomePrices[index]
+            : market.outcomePrices?.[outcome];
+
+          if (price === undefined) return null;
+
+          return { id: String(index), title: outcome, yesPrice: price };
+        })
+        .filter((item) => item !== null);
+    }
+
+    return [];
+  };
+
+  const processedOutcomes = getProcessedOutcomes();
+
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        transition={{ type: "spring", duration: 0.3 }}
-        className="bg-white rounded-lg shadow-xl p-6 m-4 max-w-lg w-full"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Market Outcomes
-          </h2>
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-xl">
+        {/* Modal header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {market.title}
+          </h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
           >
             <svg
-              className="w-6 h-6"
+              className="h-6 w-6"
               fill="none"
-              stroke="currentColor"
               viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+              stroke="currentColor"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth="2"
+                strokeWidth={2}
                 d="M6 18L18 6M6 6l12 12"
-              ></path>
+              />
             </svg>
           </button>
         </div>
 
-        <div className="mb-4">
-          <h3 className="text-lg font-medium text-gray-900">{market.title}</h3>
-          {market.option_name && (
-            <p className="text-sm font-medium text-gray-700 mt-1">
-              Option: {market.option_name}
+        {/* Market Description */}
+        {market.rules_primary && (
+          <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+            <p className="text-sm text-gray-600 whitespace-pre-line">
+              {market.rules_primary}
             </p>
-          )}
-          {market.rules_primary && (
-            <p className="text-sm text-gray-600 mt-1">{market.rules_primary}</p>
-          )}
-        </div>
-
-        <div className="border rounded-lg overflow-hidden">
-          <div className="bg-gray-50 px-4 py-3">
-            <h4 className="text-md font-medium text-gray-700">Outcomes</h4>
           </div>
-          <ul className="divide-y divide-gray-200">
-            {market.outcomes?.map((outcome, index) => (
-              <li
-                key={index}
-                className="px-4 py-3 flex justify-between items-center"
-              >
-                <span className="text-sm font-medium text-gray-800">
-                  {outcome}
-                </span>
-                <span
-                  className={`text-sm font-medium ${getPriceColorClass(
-                    market.outcomePrices?.[index] || 0
-                  )}`}
-                >
-                  {formatOutcomePrice(market.outcomePrices?.[index] || 0)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
 
-        <div className="mt-6 bg-gray-50 rounded p-3">
-          <div className="text-sm text-gray-600">
-            <div className="flex justify-between mb-1">
-              <span>Volume:</span>
-              <span className="font-medium">
-                ${market.volume.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between mb-1">
-              <span>Liquidity:</span>
-              <span className="font-medium">
-                ${market.liquidity.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>24h Volume:</span>
-              <span className="font-medium">
-                ${market.volume_24h.toLocaleString()}
-              </span>
-            </div>
+        {/* Modal content */}
+        <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-6">
+          <div className="mb-4">
+            {processedOutcomes.length > 0 ? (
+              <div className="space-y-2">
+                {processedOutcomes.map((item) => {
+                  if (!item) return null;
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex justify-between items-center bg-gray-50 rounded-md p-3 hover:bg-gray-100 transition-colors"
+                    >
+                      <span className="text-sm font-medium text-gray-800">
+                        {item.title}
+                      </span>
+                      <span
+                        className={`text-sm font-bold ${getPriceColorClass(
+                          item.yesPrice
+                        )}`}
+                      >
+                        {formatOutcomePrice(item.yesPrice)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                No outcomes available
+              </p>
+            )}
           </div>
         </div>
-      </motion.div>
+
+        {/* Modal footer */}
+        <div className="sticky bottom-0 z-10 border-t border-gray-200 bg-gray-50 px-6 py-4">
+          <div className="flex justify-between">
+            <div className="text-sm text-gray-600">
+              <div className="flex items-center space-x-4">
+                <div>
+                  <span className="font-medium">Volume:</span>{" "}
+                  <span>${market.volume.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="font-medium">Liquidity:</span>{" "}
+                  <span>${market.liquidity.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm border border-gray-300 hover:bg-gray-50"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -175,7 +201,7 @@ export default function KalshiMarkets() {
   const [categories, setCategories] = useState<string[]>([]);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const LIMIT = 20;
+  const LIMIT = 100;
 
   // Function to load more markets
   const loadMore = () => {
@@ -571,73 +597,133 @@ export default function KalshiMarkets() {
                           </span>
                         </div>
                       </div>
+                      {eventGroup.markets.length > 0 && (
+                        <Link
+                          href={`https://kalshi.com/markets/${
+                            eventGroup.markets[0].ticker.split("-")[0]
+                          }`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                        >
+                          View on Kalshi
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
+                          </svg>
+                        </Link>
+                      )}
                     </div>
                   </div>
 
-                  {/* Markets in this event */}
-                  <div className="divide-y divide-gray-200">
+                  {/* Markets in this event - Now in a grid layout */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                     {eventGroup.markets.map((market) => (
                       <div
                         key={market.id}
-                        className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                        onClick={() => openOutcomesModal(market)}
+                        className="bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow"
                       >
-                        <div className="flex items-start">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-medium text-gray-900">
+                        <div className="p-3">
+                          {/* Market Title - Only show if different from option_name */}
+                          {market.title !== market.option_name && (
+                            <h3 className="text-sm font-medium text-gray-700 mb-2 line-clamp-1">
                               {market.title}
                             </h3>
+                          )}
 
-                            {/* Display option name if available */}
-                            {market.option_name && (
-                              <p className="text-sm text-gray-600 mt-1">
+                          {/* Option Name */}
+                          <div className="mb-3">
+                            {market.option_name ? (
+                              <p className="text-base font-bold text-gray-800 line-clamp-1">
                                 {market.option_name}
                               </p>
+                            ) : (
+                              <p className="text-base font-bold text-gray-800 line-clamp-1">
+                                {market.title}
+                              </p>
                             )}
-
-                            {/* Market Stats */}
-                            <div className="grid grid-cols-3 gap-3 mt-3">
-                              <div>
-                                <p className="text-xs text-gray-500">Volume</p>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {formatCurrency(market.volume)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Liquidity
-                                </p>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {formatCurrency(market.liquidity)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Expires</p>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {formatDate(market.expiration_time)}
-                                </p>
-                              </div>
-                            </div>
                           </div>
 
                           {/* Yes/No Prices */}
-                          <div className="ml-4 flex-shrink-0 flex space-x-2">
-                            <div className="bg-green-50 rounded-md px-3 py-2 text-center min-w-[70px]">
-                              <p className="text-xs text-green-700">Yes</p>
-                              <p className="text-sm font-semibold text-green-800">
+                          <div className="flex space-x-2 mb-3">
+                            <div className="flex-1 bg-green-50 border border-green-100 rounded-md px-2 py-1 text-center">
+                              <p className="text-xs text-green-700 mb-1">Yes</p>
+                              <p className="text-sm font-bold text-green-800">
                                 {market.yes_bid
                                   ? `$${market.yes_bid.toFixed(2)}`
                                   : "N/A"}
                               </p>
                             </div>
-                            <div className="bg-red-50 rounded-md px-3 py-2 text-center min-w-[70px]">
-                              <p className="text-xs text-red-700">No</p>
-                              <p className="text-sm font-semibold text-red-800">
+                            <div className="flex-1 bg-red-50 border border-red-100 rounded-md px-2 py-1 text-center">
+                              <p className="text-xs text-red-700 mb-1">No</p>
+                              <p className="text-sm font-bold text-red-800">
                                 {market.no_bid
                                   ? `$${market.no_bid.toFixed(2)}`
                                   : "N/A"}
                               </p>
                             </div>
+                          </div>
+
+                          {/* Market Stats */}
+                          <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
+                            <div>
+                              <p className="text-xs text-gray-500">Volume</p>
+                              <p className="text-xs font-medium text-gray-900">
+                                {formatCurrency(market.volume)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Liquidity</p>
+                              <p className="text-xs font-medium text-gray-900">
+                                {formatCurrency(market.liquidity)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Expires</p>
+                              <p className="text-xs font-medium text-gray-900">
+                                {formatDate(market.expiration_time)}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
+                            <button
+                              onClick={() => openOutcomesModal(market)}
+                              className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3 w-3 mr-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                              Details
+                            </button>
                           </div>
                         </div>
                       </div>
