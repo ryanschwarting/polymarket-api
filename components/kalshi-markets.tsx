@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -498,6 +498,10 @@ export default function KalshiMarkets() {
   const [isAllOptionsModalOpen, setIsAllOptionsModalOpen] = useState(false);
   const LIMIT = 10000;
 
+  // Refs for dropdown elements
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
+
   // Function to toggle event expansion (now opens the modal)
   const toggleEventExpansion = (eventGroup: EventGroup) => {
     setSelectedEventGroup(eventGroup);
@@ -566,16 +570,14 @@ export default function KalshiMarkets() {
       setIsLoading(true);
       setError(null);
 
-      // Construct the API URL with query parameters
+      // Construct the API URL with query parameters - only for pagination and sorting
       const params = new URLSearchParams({
         limit: LIMIT.toString(),
         offset: offset.toString(),
         sort: sortOption,
       });
 
-      if (selectedCategories.length === 1) {
-        params.append("category", selectedCategories[0]);
-      }
+      // No longer sending categories to the API - we'll filter on the client side
 
       const response = await fetch(`/api/kalshi/markets?${params.toString()}`);
       const data: KalshiMarketsResponse = await response.json();
@@ -600,7 +602,7 @@ export default function KalshiMarkets() {
     } finally {
       setIsLoading(false);
     }
-  }, [offset, sortOption, selectedCategories]);
+  }, [offset, sortOption]); // Remove selectedCategories from dependency array
 
   // Fetch markets when component mounts or dependencies change
   useEffect(() => {
@@ -626,18 +628,25 @@ export default function KalshiMarkets() {
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
-    setOffset(0); // Reset pagination when changing filters
   };
 
   // Function to clear all selected categories
   const clearCategories = () => {
     setSelectedCategories([]);
-    setOffset(0); // Reset pagination when clearing filters
+    // No need to reset pagination or fetch - we'll filter client-side
   };
 
   // Function to toggle filter dropdown
   const toggleFilter = () => {
     setIsFilterExpanded(!isFilterExpanded);
+  };
+
+  // Function to apply filter and close dropdown
+  const applyFilter = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsFilterExpanded(false);
+    // No need to fetch - we're filtering client-side now
   };
 
   // Function to handle sort change
@@ -647,12 +656,15 @@ export default function KalshiMarkets() {
   };
 
   // Function to handle click outside the filter dropdown
-  const handleClickOutside = (e: MouseEvent) => {
+  const handleClickOutside = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (!target.closest(".filter-dropdown")) {
+    if (
+      !target.closest("#filter-dropdown") &&
+      !target.closest("#filter-button")
+    ) {
       setIsFilterExpanded(false);
     }
-  };
+  }, []);
 
   // Setup click outside handler
   useEffect(() => {
@@ -660,7 +672,7 @@ export default function KalshiMarkets() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [handleClickOutside]);
 
   // Group markets by event_ticker
   const groupMarketsByEvent = (markets: KalshiMarket[]): EventGroup[] => {
@@ -713,26 +725,18 @@ export default function KalshiMarkets() {
   // Filter markets based on search query and selected categories
   const filteredMarkets = markets.filter((market) => {
     // If there's a search query, filter by it
-    if (
-      searchQuery &&
-      !market.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !(
-        market.event_title &&
-        market.event_title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    ) {
-      return false;
-    }
+    const matchesSearch =
+      !searchQuery ||
+      market.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (market.event_title &&
+        market.event_title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // If there are selected categories, filter by them
-    if (
-      selectedCategories.length > 0 &&
-      !selectedCategories.includes(market.category || "Uncategorized")
-    ) {
-      return false;
-    }
+    // Category filter - exactly like in all-markets.tsx
+    const matchesCategory =
+      selectedCategories.length === 0 || // If no categories selected, show all
+      (market.category && selectedCategories.includes(market.category));
 
-    return true;
+    return matchesSearch && matchesCategory;
   });
 
   // Group filtered markets by event
@@ -809,9 +813,12 @@ export default function KalshiMarkets() {
             {/* Filter Button */}
             <div className="relative">
               <button
+                id="filter-button"
                 onClick={toggleFilter}
-                className="filter-dropdown px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Toggle filter"
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Filter by category"
+                aria-expanded={isFilterExpanded}
+                aria-controls="filter-dropdown"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -829,44 +836,139 @@ export default function KalshiMarkets() {
                 </svg>
                 <span className="text-gray-700">Filter</span>
                 {selectedCategories.length > 0 && (
-                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full ml-1">
+                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
                     {selectedCategories.length}
                   </span>
                 )}
               </button>
+
+              {/* Filter Dropdown */}
+              {isFilterExpanded && (
+                <div
+                  id="filter-dropdown"
+                  className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+                >
+                  {/* Sort Options */}
+                  <div className="p-3 border-b border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                      Sort By
+                    </h3>
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-center">
+                        <input
+                          id="sort-volume"
+                          type="radio"
+                          name="sort-option"
+                          checked={sortOption === "volume"}
+                          onChange={() => handleSortChange("volume")}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        />
+                        <label
+                          htmlFor="sort-volume"
+                          className="ml-2 text-sm text-gray-700"
+                        >
+                          Highest Volume
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          id="sort-liquidity"
+                          type="radio"
+                          name="sort-option"
+                          checked={sortOption === "liquidity"}
+                          onChange={() => handleSortChange("liquidity")}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        />
+                        <label
+                          htmlFor="sort-liquidity"
+                          className="ml-2 text-sm text-gray-700"
+                        >
+                          Highest Liquidity
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 border-b border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-700">
+                      Filter by Category
+                    </h3>
+                  </div>
+                  <div className="p-3 max-h-60 overflow-y-auto">
+                    <div className="space-y-2">
+                      {categories.map((category) => (
+                        <div key={category} className="flex items-center">
+                          <input
+                            id={`category-${category}`}
+                            type="checkbox"
+                            checked={selectedCategories.includes(category)}
+                            onChange={() => toggleCategory(category)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <label
+                            htmlFor={`category-${category}`}
+                            className="ml-2 text-sm text-gray-700"
+                          >
+                            {category}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3 border-t border-gray-200 flex justify-between">
+                    <button
+                      onClick={clearCategories}
+                      className="text-sm text-gray-600 hover:text-gray-900"
+                      disabled={selectedCategories.length === 0}
+                    >
+                      Clear all
+                    </button>
+                    <button
+                      onClick={toggleFilter}
+                      className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {isFilterExpanded && (
-          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-semibold text-gray-700">
-                Filter by Category
-              </h3>
-              <button
-                onClick={clearCategories}
-                className="text-xs text-gray-600 hover:text-gray-900 underline"
+        {/* Selected Categories Display */}
+        {selectedCategories.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {selectedCategories.map((category) => (
+              <div
+                key={category}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
               >
-                Clear all
-              </button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {categories.map((category) => (
-                <label
-                  key={category}
-                  className="flex items-center space-x-2 cursor-pointer"
+                {category}
+                <button
+                  onClick={() => toggleCategory(category)}
+                  className="ml-1.5 text-blue-600 hover:text-blue-800 focus:outline-none"
                 >
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes(category)}
-                    onChange={() => toggleCategory(category)}
-                    className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                  />
-                  <span className="text-sm">{category}</span>
-                </label>
-              ))}
-            </div>
+                  <svg
+                    className="h-3 w-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={clearCategories}
+              className="text-xs text-gray-600 hover:text-gray-900 underline"
+            >
+              Clear all
+            </button>
           </div>
         )}
 

@@ -170,8 +170,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get("limit") || "100";
     const offset = searchParams.get("offset") || "0";
-    const category = searchParams.get("category");
     const sort = searchParams.get("sort") || "volume";
+
+    // Get all category parameters (supports multiple categories)
+    const categories = searchParams.getAll("categories");
 
     // Set up request options
     const options = {
@@ -195,11 +197,18 @@ export async function GET(request: Request) {
     // Map the Kalshi markets from events to our format
     let mappedMarkets = mapKalshiMarketsFromEvents(data.events);
 
-    // Apply category filter if provided
-    if (category) {
-      mappedMarkets = mappedMarkets.filter(
-        (market) => market.category?.toLowerCase() === category.toLowerCase()
-      );
+    // Apply category filter if categories are provided
+    if (categories.length > 0) {
+      mappedMarkets = mappedMarkets.filter((market) => {
+        // Skip markets without a category
+        if (!market.category) return false;
+
+        const marketCategory = market.category as string;
+        // Check if the market's category matches any of the selected categories
+        return categories.some(
+          (cat) => marketCategory.toLowerCase() === cat.toLowerCase()
+        );
+      });
     }
 
     // Sort markets by volume or liquidity
@@ -211,7 +220,7 @@ export async function GET(request: Request) {
     });
 
     // Get unique categories
-    const categories = Array.from(
+    const uniqueCategories = Array.from(
       new Set(mappedMarkets.map((market) => market.category || "Uncategorized"))
     );
 
@@ -227,7 +236,7 @@ export async function GET(request: Request) {
     return Response.json({
       success: true,
       markets: paginatedMarkets,
-      categories,
+      categories: uniqueCategories,
       totalMarkets: mappedMarkets.length,
       message: "Markets retrieved successfully",
     });
