@@ -95,6 +95,11 @@ function OutcomesModal({
 
         <div className="mb-4">
           <h3 className="text-lg font-medium text-gray-900">{market.title}</h3>
+          {market.option_name && (
+            <p className="text-sm font-medium text-gray-700 mt-1">
+              Option: {market.option_name}
+            </p>
+          )}
           {market.rules_primary && (
             <p className="text-sm text-gray-600 mt-1">{market.rules_primary}</p>
           )}
@@ -582,6 +587,13 @@ export default function KalshiMarkets() {
                             <h3 className="text-base font-medium text-gray-900">
                               {market.title}
                             </h3>
+
+                            {/* Display option name if available */}
+                            {market.option_name && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                {market.option_name}
+                              </p>
+                            )}
 
                             {/* Market Stats */}
                             <div className="grid grid-cols-3 gap-3 mt-3">
