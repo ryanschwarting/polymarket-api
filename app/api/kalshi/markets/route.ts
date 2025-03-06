@@ -142,27 +142,27 @@ function mapKalshiMarketsFromEvents(events: KalshiEvent[]): KalshiMarket[] {
 }
 
 // Original function kept for reference
-function mapKalshiMarkets(markets: any[]): KalshiMarket[] {
-  return markets.map((market) => {
-    // Determine if market is active or closed based on status
-    const active =
-      market.status === "active" || market.status === "initialized";
-    const closed = market.status === "settled" || market.status === "canceled";
+// function mapKalshiMarkets(markets: any[]): KalshiMarket[] {
+//   return markets.map((market) => {
+//     // Determine if market is active or closed based on status
+//     const active =
+//       market.status === "active" || market.status === "initialized";
+//     const closed = market.status === "settled" || market.status === "canceled";
 
-    // Create outcomePrices array from yes_bid and yes_ask
-    const outcomePrices = [market.yes_bid, market.no_bid];
+//     // Create outcomePrices array from yes_bid and yes_ask
+//     const outcomePrices = [market.yes_bid, market.no_bid];
 
-    // Return the mapped market
-    return {
-      ...market,
-      outcomes: ["Yes", "No"],
-      outcomePrices,
-      active,
-      closed,
-      isNew: isNewMarket(market),
-    };
-  });
-}
+//     // Return the mapped market
+//     return {
+//       ...market,
+//       outcomes: ["Yes", "No"],
+//       outcomePrices,
+//       active,
+//       closed,
+//       isNew: isNewMarket(market),
+//     };
+//   });
+// }
 
 export async function GET(request: Request) {
   try {
@@ -240,13 +240,15 @@ export async function GET(request: Request) {
       totalMarkets: mappedMarkets.length,
       message: "Markets retrieved successfully",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching Kalshi markets:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch markets";
     return Response.json(
       {
         success: false,
         markets: [],
-        message: error.message || "Failed to fetch markets",
+        message: errorMessage,
         totalMarkets: 0,
       },
       { status: 500 }

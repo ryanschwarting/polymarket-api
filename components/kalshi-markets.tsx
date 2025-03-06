@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { KalshiMarket } from "@/app/api/kalshi/markets/route";
 
@@ -190,20 +189,19 @@ function AllOptionsModal({
   isOpen,
   onClose,
   eventGroup,
-  openOutcomesModal,
   formatCurrency,
   formatDate,
 }: {
   isOpen: boolean;
   onClose: () => void;
   eventGroup: EventGroup;
-  openOutcomesModal: (market: KalshiMarket) => void;
   formatCurrency: (value: number) => string;
   formatDate: (dateString: string) => string;
 }) {
-  if (!isOpen) return null;
-
+  // Move useState outside of conditional to fix React Hook rules error
   const [expandedMarketId, setExpandedMarketId] = useState<string | null>(null);
+
+  if (!isOpen) return null;
 
   // Format outcome price
   const formatOutcomePrice = (price: number): string => {
@@ -486,7 +484,6 @@ export default function KalshiMarkets() {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [showCategoryFilters, setShowCategoryFilters] = useState(false);
   const [sortOption, setSortOption] = useState<"volume" | "liquidity">(
     "volume"
   );
@@ -497,10 +494,6 @@ export default function KalshiMarkets() {
     useState<EventGroup | null>(null);
   const [isAllOptionsModalOpen, setIsAllOptionsModalOpen] = useState(false);
   const LIMIT = 10000;
-
-  // Refs for dropdown elements
-  const filterButtonRef = useRef<HTMLButtonElement>(null);
-  const filterDropdownRef = useRef<HTMLDivElement>(null);
 
   // Function to toggle event expansion (now opens the modal)
   const toggleEventExpansion = (eventGroup: EventGroup) => {
@@ -554,14 +547,6 @@ export default function KalshiMarkets() {
     }
 
     return `${diffDays} days`;
-  };
-
-  // Function to format start date
-  const formatStartDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const month = date.toLocaleString("default", { month: "short" });
-    const day = date.getDate();
-    return `${month} ${day}`;
   };
 
   // Function to fetch markets
@@ -639,14 +624,6 @@ export default function KalshiMarkets() {
   // Function to toggle filter dropdown
   const toggleFilter = () => {
     setIsFilterExpanded(!isFilterExpanded);
-  };
-
-  // Function to apply filter and close dropdown
-  const applyFilter = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsFilterExpanded(false);
-    // No need to fetch - we're filtering client-side now
   };
 
   // Function to handle sort change
@@ -1301,7 +1278,6 @@ export default function KalshiMarkets() {
             isOpen={isAllOptionsModalOpen}
             onClose={closeAllOptionsModal}
             eventGroup={selectedEventGroup}
-            openOutcomesModal={openOutcomesModal}
             formatCurrency={formatCurrency}
             formatDate={formatDate}
           />
