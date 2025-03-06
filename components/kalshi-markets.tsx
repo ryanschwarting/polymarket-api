@@ -20,6 +20,8 @@ interface EventGroup {
   eventTitle: string;
   markets: KalshiMarket[];
   category: string;
+  totalVolume: number;
+  totalLiquidity: number;
 }
 
 // Modal component for displaying outcomes
@@ -201,7 +203,21 @@ export default function KalshiMarkets() {
   const [categories, setCategories] = useState<string[]>([]);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const LIMIT = 100;
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+  const LIMIT = 10000;
+
+  // Function to toggle event expansion
+  const toggleEventExpansion = (eventTitle: string) => {
+    setExpandedEvents((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventTitle)) {
+        newSet.delete(eventTitle);
+      } else {
+        newSet.add(eventTitle);
+      }
+      return newSet;
+    });
+  };
 
   // Function to load more markets
   const loadMore = () => {
@@ -367,16 +383,40 @@ export default function KalshiMarkets() {
           eventTitle: market.event_title || "Unknown Event",
           markets: [],
           category: market.category || "Uncategorized",
+          totalVolume: 0,
+          totalLiquidity: 0,
         });
       }
 
-      eventMap.get(market.event_ticker)?.markets.push(market);
+      const eventGroup = eventMap.get(market.event_ticker);
+      if (eventGroup) {
+        eventGroup.markets.push(market);
+        eventGroup.totalVolume += market.volume || 0;
+        eventGroup.totalLiquidity += market.liquidity || 0;
+      }
     });
 
     // Convert map to array and sort by number of markets
     return Array.from(eventMap.values()).sort(
       (a, b) => b.markets.length - a.markets.length
     );
+  };
+
+  // Get the most likely market (highest yes price) from an array of markets
+  const getMostLikelyMarket = (markets: KalshiMarket[]): KalshiMarket => {
+    if (!markets || markets.length === 0) return markets[0];
+
+    return markets.reduce((mostLikely, current) => {
+      // If current market has no yes_bid, keep the previous most likely
+      if (!current.yes_bid) return mostLikely;
+
+      // If we don't have a most likely yet, or current has higher yes_bid
+      if (!mostLikely.yes_bid || current.yes_bid > mostLikely.yes_bid) {
+        return current;
+      }
+
+      return mostLikely;
+    }, markets[0]);
   };
 
   // Filter markets based on search query and selected categories
@@ -406,6 +446,14 @@ export default function KalshiMarkets() {
 
   // Group filtered markets by event
   const eventGroups = groupMarketsByEvent(filteredMarkets);
+
+  // Sort event groups based on the selected sort option
+  const sortedEventGroups = [...eventGroups].sort((a, b) => {
+    if (sortOption === "liquidity") {
+      return b.totalLiquidity - a.totalLiquidity;
+    }
+    return b.totalVolume - a.totalVolume;
+  });
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
@@ -467,30 +515,35 @@ export default function KalshiMarkets() {
                 </span>
               </button>
             </div>
-            <button
-              onClick={toggleFilter}
-              className="filter-dropdown inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <svg
-                className="h-4 w-4 mr-1.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+            {/* Filter Button */}
+            <div className="relative">
+              <button
+                onClick={toggleFilter}
+                className="filter-dropdown px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Toggle filter"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                />
-              </svg>
-              <span className="text-gray-700">Filter</span>
-              {selectedCategories.length > 0 && (
-                <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full ml-1">
-                  {selectedCategories.length}
-                </span>
-              )}
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-gray-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                  />
+                </svg>
+                <span className="text-gray-700">Filter</span>
+                {selectedCategories.length > 0 && (
+                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full ml-1">
+                    {selectedCategories.length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -576,7 +629,7 @@ export default function KalshiMarkets() {
           <>
             {/* Display markets grouped by event */}
             <div className="space-y-8">
-              {eventGroups.map((eventGroup) => (
+              {sortedEventGroups.map((eventGroup) => (
                 <div
                   key={eventGroup.eventTitle}
                   className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
@@ -595,21 +648,38 @@ export default function KalshiMarkets() {
                           <span className="text-sm text-gray-500">
                             {eventGroup.markets.length} markets
                           </span>
+                          <span className="mx-2 text-gray-300">•</span>
+                          <span className="text-sm text-gray-500">
+                            Vol: {formatCurrency(eventGroup.totalVolume)}
+                          </span>
+                          <span className="mx-2 text-gray-300">•</span>
+                          <span className="text-sm text-gray-500">
+                            Liq: {formatCurrency(eventGroup.totalLiquidity)}
+                          </span>
                         </div>
                       </div>
-                      {eventGroup.markets.length > 0 && (
-                        <Link
-                          href={`https://kalshi.com/markets/${
-                            eventGroup.markets[0].ticker.split("-")[0]
-                          }`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() =>
+                            toggleEventExpansion(eventGroup.eventTitle)
+                          }
+                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                          aria-expanded={expandedEvents.has(
+                            eventGroup.eventTitle
+                          )}
                         >
-                          View on Kalshi
+                          <span className="mr-1.5">
+                            {expandedEvents.has(eventGroup.eventTitle)
+                              ? "Hide Options"
+                              : "See Options"}
+                          </span>
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-3 w-3 ml-1"
+                            className={`h-4 w-4 transition-transform ${
+                              expandedEvents.has(eventGroup.eventTitle)
+                                ? "rotate-180"
+                                : ""
+                            }`}
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -617,118 +687,209 @@ export default function KalshiMarkets() {
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
                             />
                           </svg>
-                        </Link>
-                      )}
+                        </button>
+                        {eventGroup.markets.length > 0 && (
+                          <Link
+                            href={`https://kalshi.com/markets/${
+                              eventGroup.markets[0].ticker.split("-")[0]
+                            }`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                          >
+                            View on Kalshi
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-3 w-3 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                              />
+                            </svg>
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Markets in this event - Now in a grid layout */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                    {eventGroup.markets.map((market) => (
-                      <div
-                        key={market.id}
-                        className="bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow"
+                  {/* Markets in this event - Now in a grid layout with animation */}
+                  <AnimatePresence>
+                    {expandedEvents.has(eventGroup.eventTitle) && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
                       >
-                        <div className="p-3">
-                          {/* Market Title - Only show if different from option_name */}
-                          {market.title !== market.option_name && (
-                            <h3 className="text-sm font-medium text-gray-700 mb-2 line-clamp-1">
-                              {market.title}
-                            </h3>
-                          )}
-
-                          {/* Option Name */}
-                          <div className="mb-3">
-                            {market.option_name ? (
-                              <p className="text-base font-bold text-gray-800 line-clamp-1">
-                                {market.option_name}
-                              </p>
-                            ) : (
-                              <p className="text-base font-bold text-gray-800 line-clamp-1">
-                                {market.title}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Yes/No Prices */}
-                          <div className="flex space-x-2 mb-3">
-                            <div className="flex-1 bg-green-50 border border-green-100 rounded-md px-2 py-1 text-center">
-                              <p className="text-xs text-green-700 mb-1">Yes</p>
-                              <p className="text-sm font-bold text-green-800">
-                                {market.yes_bid
-                                  ? `$${market.yes_bid.toFixed(2)}`
-                                  : "N/A"}
-                              </p>
-                            </div>
-                            <div className="flex-1 bg-red-50 border border-red-100 rounded-md px-2 py-1 text-center">
-                              <p className="text-xs text-red-700 mb-1">No</p>
-                              <p className="text-sm font-bold text-red-800">
-                                {market.no_bid
-                                  ? `$${market.no_bid.toFixed(2)}`
-                                  : "N/A"}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Market Stats */}
-                          <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
-                            <div>
-                              <p className="text-xs text-gray-500">Volume</p>
-                              <p className="text-xs font-medium text-gray-900">
-                                {formatCurrency(market.volume)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">Liquidity</p>
-                              <p className="text-xs font-medium text-gray-900">
-                                {formatCurrency(market.liquidity)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">Expires</p>
-                              <p className="text-xs font-medium text-gray-900">
-                                {formatDate(market.expiration_time)}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
-                            <button
-                              onClick={() => openOutcomesModal(market)}
-                              className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                          {eventGroup.markets.map((market) => (
+                            <div
+                              key={market.id}
+                              className="bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow"
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-3 w-3 mr-1"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1.5}
-                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1.5}
-                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                />
-                              </svg>
-                              Details
+                              <div className="p-3">
+                                {/* Market Title - Only show if different from option_name */}
+                                {market.title !== market.option_name && (
+                                  <h3 className="text-sm font-medium text-gray-700 mb-2 line-clamp-1">
+                                    {market.title}
+                                  </h3>
+                                )}
+
+                                {/* Option Name */}
+                                <div className="mb-3">
+                                  {market.option_name ? (
+                                    <p className="text-base font-bold text-gray-800 line-clamp-1">
+                                      {market.option_name}
+                                    </p>
+                                  ) : (
+                                    <p className="text-base font-bold text-gray-800 line-clamp-1">
+                                      {market.title}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Yes/No Prices */}
+                                <div className="flex space-x-2 mb-3">
+                                  <div className="flex-1 bg-green-50 border border-green-100 rounded-md px-2 py-1 text-center">
+                                    <p className="text-xs text-green-700 mb-1">
+                                      Yes
+                                    </p>
+                                    <p className="text-sm font-bold text-green-800">
+                                      {market.yes_bid
+                                        ? `$${market.yes_bid.toFixed(2)}`
+                                        : "N/A"}
+                                    </p>
+                                  </div>
+                                  <div className="flex-1 bg-red-50 border border-red-100 rounded-md px-2 py-1 text-center">
+                                    <p className="text-xs text-red-700 mb-1">
+                                      No
+                                    </p>
+                                    <p className="text-sm font-bold text-red-800">
+                                      {market.no_bid
+                                        ? `$${market.no_bid.toFixed(2)}`
+                                        : "N/A"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Market Stats */}
+                                <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
+                                  <div>
+                                    <p className="text-xs text-gray-500">
+                                      Volume
+                                    </p>
+                                    <p className="text-xs font-medium text-gray-900">
+                                      {formatCurrency(market.volume)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">
+                                      Liquidity
+                                    </p>
+                                    <p className="text-xs font-medium text-gray-900">
+                                      {formatCurrency(market.liquidity)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">
+                                      Expires
+                                    </p>
+                                    <p className="text-xs font-medium text-gray-900">
+                                      {formatDate(market.expiration_time)}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
+                                  <button
+                                    onClick={() => openOutcomesModal(market)}
+                                    className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3 w-3 mr-1"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1.5}
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                      />
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1.5}
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                      />
+                                    </svg>
+                                    Details
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Preview of first market when collapsed */}
+                  {!expandedEvents.has(eventGroup.eventTitle) &&
+                    eventGroup.markets.length > 0 && (
+                      <div className="p-4 border-t border-gray-200 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">
+                                Current Favorite:
+                              </span>{" "}
+                              {(() => {
+                                const mostLikelyMarket = getMostLikelyMarket(
+                                  eventGroup.markets
+                                );
+                                return (
+                                  <span className="text-gray-800">
+                                    {mostLikelyMarket?.option_name ||
+                                      mostLikelyMarket?.title ||
+                                      "Unknown"}
+                                    {mostLikelyMarket?.yes_bid
+                                      ? ` (${mostLikelyMarket.yes_bid.toFixed(
+                                          1
+                                        )}%)`
+                                      : ""}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            <button
+                              onClick={() =>
+                                toggleEventExpansion(eventGroup.eventTitle)
+                              }
+                              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                              View all options
                             </button>
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
                 </div>
               ))}
             </div>
