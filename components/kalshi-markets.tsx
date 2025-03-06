@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -84,7 +84,7 @@ function OutcomesModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
       <div className="relative w-full max-w-lg max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-xl">
@@ -185,6 +185,296 @@ function OutcomesModal({
   );
 }
 
+// Modal component for displaying all options in an event
+function AllOptionsModal({
+  isOpen,
+  onClose,
+  eventGroup,
+  openOutcomesModal,
+  formatCurrency,
+  formatDate,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  eventGroup: EventGroup;
+  openOutcomesModal: (market: KalshiMarket) => void;
+  formatCurrency: (value: number) => string;
+  formatDate: (dateString: string) => string;
+}) {
+  if (!isOpen) return null;
+
+  const [expandedMarketId, setExpandedMarketId] = useState<string | null>(null);
+
+  // Format outcome price
+  const formatOutcomePrice = (price: number): string => {
+    return `${price ? price.toFixed(1) : "0"}%`;
+  };
+
+  // Helper function to determine text color based on price
+  const getPriceColorClass = (price: number): string => {
+    if (price > 50) return "text-green-600";
+    if (price > 20) return "text-amber-600";
+    if (price > 5) return "text-orange-600";
+    return "text-red-600";
+  };
+
+  // Process outcomes for display
+  const getProcessedOutcomes = (market: KalshiMarket) => {
+    if (
+      market.outcomes &&
+      market.outcomePrices &&
+      Array.isArray(market.outcomes)
+    ) {
+      return market.outcomes
+        .map((outcome, index) => {
+          const price = Array.isArray(market.outcomePrices)
+            ? market.outcomePrices[index]
+            : market.outcomePrices?.[outcome];
+
+          if (price === undefined) return null;
+
+          return { id: String(index), title: outcome, yesPrice: price };
+        })
+        .filter((item) => item !== null);
+    }
+
+    return [];
+  };
+
+  // Handle click on the backdrop to close the modal
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only close if the click was directly on the backdrop, not on its children
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  // Toggle market details expansion
+  const toggleMarketDetails = (marketId: string) => {
+    setExpandedMarketId(expandedMarketId === marketId ? null : marketId);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+    >
+      <div className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-xl">
+        {/* Modal header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {eventGroup.eventTitle}
+            </h3>
+            <div className="flex flex-wrap items-center mt-1 gap-2">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {eventGroup.category}
+              </span>
+              <span className="text-sm text-gray-500">
+                {eventGroup.markets.length} markets
+              </span>
+              <span className="mx-1 text-gray-300">•</span>
+              <span className="text-sm text-gray-500">
+                Vol: {formatCurrency(eventGroup.totalVolume)}
+              </span>
+              <span className="mx-1 text-gray-300">•</span>
+              <span className="text-sm text-gray-500">
+                Liq: {formatCurrency(eventGroup.totalLiquidity)}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+          >
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Modal content */}
+        <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {eventGroup.markets.map((market) => (
+              <div
+                key={market.id}
+                className="bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow"
+              >
+                <div className="p-3">
+                  {/* Market Title - Only show if different from option_name */}
+                  {market.title !== market.option_name && (
+                    <h3 className="text-sm font-medium text-gray-700 mb-2 line-clamp-1">
+                      {market.title}
+                    </h3>
+                  )}
+
+                  {/* Option Name */}
+                  <div className="mb-3">
+                    {market.option_name ? (
+                      <p className="text-base font-bold text-gray-800 line-clamp-1">
+                        {market.option_name}
+                      </p>
+                    ) : (
+                      <p className="text-base font-bold text-gray-800 line-clamp-1">
+                        {market.title}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Yes/No Prices */}
+                  <div className="flex space-x-2 mb-3">
+                    <div className="flex-1 bg-green-50 border border-green-100 rounded-md px-2 py-1 text-center">
+                      <p className="text-xs text-green-700 mb-1">Yes</p>
+                      <p className="text-sm font-bold text-green-800">
+                        {market.yes_bid
+                          ? `$${market.yes_bid.toFixed(2)}`
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div className="flex-1 bg-red-50 border border-red-100 rounded-md px-2 py-1 text-center">
+                      <p className="text-xs text-red-700 mb-1">No</p>
+                      <p className="text-sm font-bold text-red-800">
+                        {market.no_bid ? `$${market.no_bid.toFixed(2)}` : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Market Stats */}
+                  <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
+                    <div>
+                      <p className="text-xs text-gray-500">Volume</p>
+                      <p className="text-xs font-medium text-gray-900">
+                        {formatCurrency(market.volume)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Liquidity</p>
+                      <p className="text-xs font-medium text-gray-900">
+                        {formatCurrency(market.liquidity)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Expires</p>
+                      <p className="text-xs font-medium text-gray-900">
+                        {formatDate(market.expiration_time)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => toggleMarketDetails(market.id)}
+                      className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3 w-3 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                      {expandedMarketId === market.id
+                        ? "Hide Details"
+                        : "Details"}
+                    </button>
+                  </div>
+
+                  {/* Expanded Details Section */}
+                  {expandedMarketId === market.id && (
+                    <div className="mt-4 pt-3 border-t border-gray-200">
+                      {/* Market Description */}
+                      {market.rules_primary && (
+                        <div className="bg-gray-50 p-3 rounded-md mb-3">
+                          <p className="text-sm text-gray-600 whitespace-pre-line">
+                            {market.rules_primary}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Outcomes */}
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">
+                          Outcomes
+                        </h4>
+                        {getProcessedOutcomes(market).length > 0 ? (
+                          <div className="space-y-2">
+                            {getProcessedOutcomes(market).map((item) => {
+                              if (!item) return null;
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="flex justify-between items-center bg-gray-50 rounded-md p-2 hover:bg-gray-100 transition-colors"
+                                >
+                                  <span className="text-xs font-medium text-gray-800">
+                                    {item.title}
+                                  </span>
+                                  <span
+                                    className={`text-xs font-bold ${getPriceColorClass(
+                                      item.yesPrice
+                                    )}`}
+                                  >
+                                    {formatOutcomePrice(item.yesPrice)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-xs text-center py-2">
+                            No outcomes available
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Modal footer */}
+        <div className="sticky bottom-0 z-10 border-t border-gray-200 bg-gray-50 px-6 py-4">
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm border border-gray-300 hover:bg-gray-50"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function KalshiMarkets() {
   const [markets, setMarkets] = useState<KalshiMarket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -203,20 +493,21 @@ export default function KalshiMarkets() {
   const [categories, setCategories] = useState<string[]>([]);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+  const [selectedEventGroup, setSelectedEventGroup] =
+    useState<EventGroup | null>(null);
+  const [isAllOptionsModalOpen, setIsAllOptionsModalOpen] = useState(false);
   const LIMIT = 10000;
 
-  // Function to toggle event expansion
-  const toggleEventExpansion = (eventTitle: string) => {
-    setExpandedEvents((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(eventTitle)) {
-        newSet.delete(eventTitle);
-      } else {
-        newSet.add(eventTitle);
-      }
-      return newSet;
-    });
+  // Function to toggle event expansion (now opens the modal)
+  const toggleEventExpansion = (eventGroup: EventGroup) => {
+    setSelectedEventGroup(eventGroup);
+    setIsAllOptionsModalOpen(true);
+  };
+
+  // Function to close the all options modal
+  const closeAllOptionsModal = () => {
+    setIsAllOptionsModalOpen(false);
+    setSelectedEventGroup(null);
   };
 
   // Function to load more markets
@@ -627,8 +918,8 @@ export default function KalshiMarkets() {
           </div>
         ) : (
           <>
-            {/* Display markets grouped by event */}
-            <div className="space-y-8">
+            {/* Display markets grouped by event in a grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-6">
               {sortedEventGroups.map((eventGroup) => (
                 <div
                   key={eventGroup.eventTitle}
@@ -636,95 +927,32 @@ export default function KalshiMarkets() {
                 >
                   {/* Event Header */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          {eventGroup.eventTitle}
-                        </h2>
-                        <div className="flex items-center mt-1">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                            {eventGroup.category}
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            {eventGroup.markets.length} markets
-                          </span>
-                          <span className="mx-2 text-gray-300">•</span>
-                          <span className="text-sm text-gray-500">
-                            Vol: {formatCurrency(eventGroup.totalVolume)}
-                          </span>
-                          <span className="mx-2 text-gray-300">•</span>
-                          <span className="text-sm text-gray-500">
-                            Liq: {formatCurrency(eventGroup.totalLiquidity)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <button
-                          onClick={() =>
-                            toggleEventExpansion(eventGroup.eventTitle)
-                          }
-                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                          aria-expanded={expandedEvents.has(
-                            eventGroup.eventTitle
-                          )}
-                        >
-                          <span className="mr-1.5">
-                            {expandedEvents.has(eventGroup.eventTitle)
-                              ? "Hide Options"
-                              : "See Options"}
-                          </span>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className={`h-4 w-4 transition-transform ${
-                              expandedEvents.has(eventGroup.eventTitle)
-                                ? "rotate-180"
-                                : ""
-                            }`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </button>
-                        {eventGroup.markets.length > 0 && (
-                          <Link
-                            href={`https://kalshi.com/markets/${
-                              eventGroup.markets[0].ticker.split("-")[0]
-                            }`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
-                          >
-                            View on Kalshi
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3 w-3 ml-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                              />
-                            </svg>
-                          </Link>
-                        )}
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                        {eventGroup.eventTitle}
+                      </h2>
+                      <div className="flex flex-wrap items-center mt-1 gap-1">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {eventGroup.category}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {eventGroup.markets.length} markets
+                        </span>
+                        <span className="mx-1 text-gray-300">•</span>
+                        <span className="text-xs text-gray-500">
+                          Vol: {formatCurrency(eventGroup.totalVolume)}
+                        </span>
+                        <span className="mx-1 text-gray-300">•</span>
+                        <span className="text-xs text-gray-500">
+                          Liq: {formatCurrency(eventGroup.totalLiquidity)}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Markets in this event - Now in a grid layout with animation */}
                   <AnimatePresence>
-                    {expandedEvents.has(eventGroup.eventTitle) && (
+                    {selectedEventGroup === eventGroup && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
@@ -732,7 +960,7 @@ export default function KalshiMarkets() {
                         transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                           {eventGroup.markets.map((market) => (
                             <div
                               key={market.id}
@@ -849,47 +1077,64 @@ export default function KalshiMarkets() {
                   </AnimatePresence>
 
                   {/* Preview of first market when collapsed */}
-                  {!expandedEvents.has(eventGroup.eventTitle) &&
-                    eventGroup.markets.length > 0 && (
-                      <div className="p-4 border-t border-gray-200 bg-gray-50">
+                  {eventGroup.markets.length > 0 && (
+                    <div className="p-4 border-t border-gray-200 bg-gray-50">
+                      <div className="flex flex-col space-y-2">
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">Current Favorite:</span>{" "}
+                          {(() => {
+                            const mostLikelyMarket = getMostLikelyMarket(
+                              eventGroup.markets
+                            );
+                            return (
+                              <span className="text-gray-800">
+                                {mostLikelyMarket?.option_name ||
+                                  mostLikelyMarket?.title ||
+                                  "Unknown"}
+                                {mostLikelyMarket?.yes_bid
+                                  ? ` (${mostLikelyMarket.yes_bid.toFixed(1)}%)`
+                                  : ""}
+                              </span>
+                            );
+                          })()}
+                        </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="text-sm text-gray-600">
-                              <span className="font-medium">
-                                Current Favorite:
-                              </span>{" "}
-                              {(() => {
-                                const mostLikelyMarket = getMostLikelyMarket(
-                                  eventGroup.markets
-                                );
-                                return (
-                                  <span className="text-gray-800">
-                                    {mostLikelyMarket?.option_name ||
-                                      mostLikelyMarket?.title ||
-                                      "Unknown"}
-                                    {mostLikelyMarket?.yes_bid
-                                      ? ` (${mostLikelyMarket.yes_bid.toFixed(
-                                          1
-                                        )}%)`
-                                      : ""}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <button
-                              onClick={() =>
-                                toggleEventExpansion(eventGroup.eventTitle)
-                              }
-                              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          <button
+                            onClick={() => toggleEventExpansion(eventGroup)}
+                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            View All Options
+                          </button>
+                          {eventGroup.markets.length > 0 && (
+                            <Link
+                              href={`https://kalshi.com/markets/${
+                                eventGroup.markets[0].ticker.split("-")[0]
+                              }`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
                             >
-                              View all options
-                            </button>
-                          </div>
+                              View on Kalshi
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3 w-3 ml-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                />
+                              </svg>
+                            </Link>
+                          )}
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -943,6 +1188,20 @@ export default function KalshiMarkets() {
             isOpen={isModalOpen}
             onClose={closeOutcomesModal}
             market={selectedMarket}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* All Options Modal */}
+      <AnimatePresence>
+        {isAllOptionsModalOpen && selectedEventGroup && (
+          <AllOptionsModal
+            isOpen={isAllOptionsModalOpen}
+            onClose={closeAllOptionsModal}
+            eventGroup={selectedEventGroup}
+            openOutcomesModal={openOutcomesModal}
+            formatCurrency={formatCurrency}
+            formatDate={formatDate}
           />
         )}
       </AnimatePresence>
