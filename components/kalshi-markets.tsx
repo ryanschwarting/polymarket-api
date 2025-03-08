@@ -37,7 +37,7 @@ function OutcomesModal({
 
   // Helper function to format outcome price
   const formatOutcomePrice = (price: number): string => {
-    return `${price ? price.toFixed(1) : "0"}%`;
+    return `${price ? Math.round(price) : "0"}¢`;
   };
 
   // Helper function to determine text color based on price
@@ -115,12 +115,26 @@ function OutcomesModal({
 
         {/* Market Description */}
         {market.rules_primary && (
-          <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+          <div className="bg-white px-6 py-3 border-b border-gray-200">
             <p className="text-sm text-gray-600 whitespace-pre-line">
               {market.rules_primary}
             </p>
           </div>
         )}
+
+        {/* Current favorite section */}
+        <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+          <p className="text-sm text-gray-700">
+            <span className="font-medium">Current favorite:</span>{" "}
+            <span
+              className={`${getPriceColorClass(
+                processedOutcomes[0]?.yesPrice || 0
+              )}`}
+            >
+              {processedOutcomes[0]?.yesPrice || 0}% chance
+            </span>
+          </p>
+        </div>
 
         {/* Modal content */}
         <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-6">
@@ -205,7 +219,7 @@ function AllOptionsModal({
 
   // Format outcome price
   const formatOutcomePrice = (price: number): string => {
-    return `${price ? price.toFixed(1) : "0"}%`;
+    return `${price ? Math.round(price) : "0"}¢`;
   };
 
   // Helper function to determine text color based on price
@@ -214,6 +228,29 @@ function AllOptionsModal({
     if (price > 20) return "text-amber-600";
     if (price > 5) return "text-orange-600";
     return "text-red-600";
+  };
+
+  // Get the most likely outcome from the markets
+  const getMostLikelyOutcome = (
+    markets: KalshiMarket[]
+  ): KalshiMarket | null => {
+    if (!markets || markets.length === 0) return null;
+
+    return markets.reduce((mostLikely, current) => {
+      // If current market has no yes_bid, keep the previous most likely
+      if (!current.yes_bid) return mostLikely;
+
+      // If we don't have a most likely yet, or current has higher yes_bid
+      if (
+        !mostLikely ||
+        !mostLikely.yes_bid ||
+        current.yes_bid > mostLikely.yes_bid
+      ) {
+        return current;
+      }
+
+      return mostLikely;
+    }, markets[0]);
   };
 
   // Process outcomes for display
@@ -302,6 +339,35 @@ function AllOptionsModal({
           </button>
         </div>
 
+        {/* Description section */}
+        {getMostLikelyOutcome(eventGroup.markets)?.rules_primary && (
+          <div className="bg-white px-6 py-3 border-b border-gray-200">
+            <p className="text-sm text-gray-600 whitespace-pre-line">
+              {getMostLikelyOutcome(eventGroup.markets)?.rules_primary}
+            </p>
+          </div>
+        )}
+
+        {/* Current favorite section */}
+        {eventGroup.markets.length > 0 && (
+          <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">Current favorite:</span>{" "}
+              <span
+                className={`${getPriceColorClass(
+                  getMostLikelyOutcome(eventGroup.markets)?.yes_bid || 0
+                )}`}
+              >
+                {getMostLikelyOutcome(eventGroup.markets)?.yes_sub_title ||
+                  getMostLikelyOutcome(eventGroup.markets)?.title ||
+                  "Yes"}{" "}
+                - {getMostLikelyOutcome(eventGroup.markets)?.yes_bid || 0}%
+                chance
+              </span>
+            </p>
+          </div>
+        )}
+
         {/* Modal content */}
         <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -337,14 +403,16 @@ function AllOptionsModal({
                       <p className="text-xs text-green-700 mb-1">Yes</p>
                       <p className="text-sm font-bold text-green-800">
                         {market.yes_bid
-                          ? `$${market.yes_bid.toFixed(2)}`
+                          ? `${Math.round(market.yes_bid)}¢`
                           : "N/A"}
                       </p>
                     </div>
                     <div className="flex-1 bg-red-50 border border-red-100 rounded-md px-2 py-1 text-center">
                       <p className="text-xs text-red-700 mb-1">No</p>
                       <p className="text-sm font-bold text-red-800">
-                        {market.no_bid ? `$${market.no_bid.toFixed(2)}` : "N/A"}
+                        {market.no_bid
+                          ? `${Math.round(market.no_bid)}¢`
+                          : "N/A"}
                       </p>
                     </div>
                   </div>
@@ -370,87 +438,6 @@ function AllOptionsModal({
                       </p>
                     </div>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
-                    <button
-                      onClick={() => toggleMarketDetails(market.id)}
-                      className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3 w-3 mr-1"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                      {expandedMarketId === market.id
-                        ? "Hide Details"
-                        : "Details"}
-                    </button>
-                  </div>
-
-                  {/* Expanded Details Section */}
-                  {expandedMarketId === market.id && (
-                    <div className="mt-4 pt-3 border-t border-gray-200">
-                      {/* Market Description */}
-                      {market.rules_primary && (
-                        <div className="bg-gray-50 p-3 rounded-md mb-3">
-                          <p className="text-sm text-gray-600 whitespace-pre-line">
-                            {market.rules_primary}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Outcomes */}
-                      <div className="mb-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">
-                          Outcomes
-                        </h4>
-                        {getProcessedOutcomes(market).length > 0 ? (
-                          <div className="space-y-2">
-                            {getProcessedOutcomes(market).map((item) => {
-                              if (!item) return null;
-                              return (
-                                <div
-                                  key={item.id}
-                                  className="flex justify-between items-center bg-gray-50 rounded-md p-2 hover:bg-gray-100 transition-colors"
-                                >
-                                  <span className="text-xs font-medium text-gray-800">
-                                    {item.title}
-                                  </span>
-                                  <span
-                                    className={`text-xs font-bold ${getPriceColorClass(
-                                      item.yesPrice
-                                    )}`}
-                                  >
-                                    {formatOutcomePrice(item.yesPrice)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="text-gray-500 text-xs text-center py-2">
-                            No outcomes available
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
@@ -1080,7 +1067,7 @@ export default function KalshiMarkets() {
                                     </p>
                                     <p className="text-sm font-bold text-green-800">
                                       {market.yes_bid
-                                        ? `$${market.yes_bid.toFixed(2)}`
+                                        ? `${Math.round(market.yes_bid)}¢`
                                         : "N/A"}
                                     </p>
                                   </div>
@@ -1090,7 +1077,7 @@ export default function KalshiMarkets() {
                                     </p>
                                     <p className="text-sm font-bold text-red-800">
                                       {market.no_bid
-                                        ? `$${market.no_bid.toFixed(2)}`
+                                        ? `${Math.round(market.no_bid)}¢`
                                         : "N/A"}
                                     </p>
                                   </div>
@@ -1122,36 +1109,6 @@ export default function KalshiMarkets() {
                                       {formatDate(market.expiration_time)}
                                     </p>
                                   </div>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
-                                  <button
-                                    onClick={() => openOutcomesModal(market)}
-                                    className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
-                                  >
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-3 w-3 mr-1"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={1.5}
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                      />
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={1.5}
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                      />
-                                    </svg>
-                                    Details
-                                  </button>
                                 </div>
                               </div>
                             </div>

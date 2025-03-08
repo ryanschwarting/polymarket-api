@@ -85,6 +85,22 @@ function OutcomesModal({
     return "text-red-600";
   };
 
+  // Helper function to determine background color based on price
+  const getPriceBgClass = (price: number): string => {
+    if (price > 0.5) return "bg-green-50";
+    if (price > 0.2) return "bg-amber-50";
+    if (price > 0.05) return "bg-orange-50";
+    return "bg-red-50";
+  };
+
+  // Helper function to determine border color based on price
+  const getPriceBorderClass = (price: number): string => {
+    if (price > 0.5) return "border-green-200";
+    if (price > 0.2) return "border-amber-200";
+    if (price > 0.05) return "border-orange-200";
+    return "border-red-200";
+  };
+
   // Handle click on the backdrop to close the modal
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only close if the click was directly on the backdrop, not on its children
@@ -215,24 +231,37 @@ function OutcomesModal({
         <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-6">
           <div className="mb-4">
             {processedOutcomes.length > 0 ? (
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {processedOutcomes.map((item) => {
                   if (!item) return null;
+                  const priceColorClass = getPriceColorClass(item.yesPrice);
+                  const priceBorderClass = getPriceBorderClass(item.yesPrice);
+
                   return (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center bg-gray-50 rounded-md p-3 hover:bg-gray-100 transition-colors"
+                      className={`flex flex-col justify-between rounded-lg p-4 border border-gray-200 bg-white hover:shadow-md transition-all duration-200 h-full`}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`${item.title}: ${formatOutcomePrice(
+                        item.yesPrice
+                      )}`}
                     >
-                      <span className="text-sm font-medium text-gray-800">
-                        {item.title}
-                      </span>
-                      <span
-                        className={`text-sm font-bold ${getPriceColorClass(
-                          item.yesPrice
-                        )}`}
-                      >
-                        {formatOutcomePrice(item.yesPrice)}
-                      </span>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-gray-800 line-clamp-2 mb-2">
+                          {item.title}
+                        </h4>
+                      </div>
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200 border-opacity-50">
+                        <span className="text-xs text-gray-500">
+                          Probability
+                        </span>
+                        <span
+                          className={`text-sm font-bold ${priceColorClass}`}
+                        >
+                          {formatOutcomePrice(item.yesPrice)}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
