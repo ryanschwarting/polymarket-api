@@ -281,7 +281,17 @@ function OutcomesModal({
   );
 }
 
-export default function AllMarkets() {
+interface PolymarketMarketsProps {
+  externalSearchQuery?: string;
+  externalSortOption?: "volume" | "liquidity";
+  externalSelectedCategories?: string[];
+}
+
+export default function PolymarketMarkets({
+  externalSearchQuery,
+  externalSortOption,
+  externalSelectedCategories,
+}: PolymarketMarketsProps = {}) {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [visibleMarkets, setVisibleMarkets] = useState<number>(24);
   const [loading, setLoading] = useState<boolean>(true);
@@ -303,6 +313,25 @@ export default function AllMarkets() {
     "Economy",
     "Uncategorized",
   ];
+
+  // Sync with external state if provided
+  useEffect(() => {
+    if (externalSearchQuery !== undefined) {
+      setSearchQuery(externalSearchQuery);
+    }
+  }, [externalSearchQuery]);
+
+  useEffect(() => {
+    if (externalSortOption !== undefined) {
+      setSortBy(externalSortOption);
+    }
+  }, [externalSortOption]);
+
+  useEffect(() => {
+    if (externalSelectedCategories !== undefined) {
+      setSelectedCategories(externalSelectedCategories);
+    }
+  }, [externalSelectedCategories]);
 
   // Wrap fetchMarkets in useCallback to prevent it from changing on every render
   const fetchMarkets = useCallback(async (isLoadingMore = false) => {
@@ -463,26 +492,34 @@ export default function AllMarkets() {
 
   // Function to toggle category selection
   const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
+    if (externalSelectedCategories === undefined) {
+      setSelectedCategories((prev) =>
+        prev.includes(category)
+          ? prev.filter((c) => c !== category)
+          : [...prev, category]
+      );
+    }
   };
 
   // Function to clear all selected categories
   const clearCategories = () => {
-    setSelectedCategories([]);
+    if (externalSelectedCategories === undefined) {
+      setSelectedCategories([]);
+    }
   };
 
   // Function to toggle filter dropdown
   const toggleFilter = () => {
-    setIsFilterOpen((prev) => !prev);
+    if (externalSelectedCategories === undefined) {
+      setIsFilterOpen(!isFilterOpen);
+    }
   };
 
   // Function to set sort option
   const handleSortChange = (option: "volume" | "liquidity") => {
-    setSortBy(option);
+    if (externalSortOption === undefined) {
+      setSortBy(option);
+    }
   };
 
   // Function to close filter dropdown when clicking outside
@@ -505,226 +542,144 @@ export default function AllMarkets() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Search Bar and Filter */}
-      <div className="mb-6">
-        <div className="flex gap-2">
-          <div className="relative flex-grow">
-            <input
-              type="text"
-              placeholder="Search markets..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              aria-label="Search markets"
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              <svg
-                className="h-5 w-5 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+    <div className="container mx-auto p-6">
+      {/* Only render search/filter UI if no external controls */}
+      {externalSearchQuery === undefined &&
+        externalSortOption === undefined &&
+        externalSelectedCategories === undefined && (
+          <div className="mb-6">
+            <div className="flex gap-4">
+              <div className="relative flex-grow">
+                <input
+                  type="text"
+                  placeholder="Search markets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  aria-label="Search markets"
                 />
-              </svg>
-            </div>
-          </div>
-
-          {/* Sort Button */}
-          <div className="relative">
-            <button
-              onClick={() =>
-                handleSortChange(sortBy === "volume" ? "liquidity" : "volume")
-              }
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="Toggle sort order"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                />
-              </svg>
-              <span className="text-gray-700">
-                Sort: {sortBy === "volume" ? "Volume" : "Liquidity"}
-              </span>
-            </button>
-          </div>
-
-          {/* Filter Button */}
-          <div className="relative">
-            <button
-              id="filter-button"
-              onClick={toggleFilter}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="Filter by category"
-              aria-expanded={isFilterOpen}
-              aria-controls="filter-dropdown"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                />
-              </svg>
-              <span className="text-gray-700">Filter</span>
-              {selectedCategories.length > 0 && (
-                <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
-                  {selectedCategories.length}
-                </span>
-              )}
-            </button>
-
-            {/* Filter Dropdown */}
-            {isFilterOpen && (
-              <div
-                id="filter-dropdown"
-                className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
-              >
-                {/* Sort Options */}
-                <div className="p-3 border-b border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                    Sort By
-                  </h3>
-                  <div className="flex flex-col space-y-2">
-                    <div className="flex items-center">
-                      <input
-                        id="sort-volume"
-                        type="radio"
-                        name="sort-option"
-                        checked={sortBy === "volume"}
-                        onChange={() => handleSortChange("volume")}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      />
-                      <label
-                        htmlFor="sort-volume"
-                        className="ml-2 text-sm text-gray-700"
-                      >
-                        Highest Volume
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        id="sort-liquidity"
-                        type="radio"
-                        name="sort-option"
-                        checked={sortBy === "liquidity"}
-                        onChange={() => handleSortChange("liquidity")}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                      />
-                      <label
-                        htmlFor="sort-liquidity"
-                        className="ml-2 text-sm text-gray-700"
-                      >
-                        Highest Liquidity
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-3 border-b border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-700">
-                    Filter by Category
-                  </h3>
-                </div>
-                <div className="p-3 max-h-60 overflow-y-auto">
-                  <div className="space-y-2">
-                    {categories.map((category) => (
-                      <div key={category} className="flex items-center">
-                        <input
-                          id={`category-${category}`}
-                          type="checkbox"
-                          checked={selectedCategories.includes(category)}
-                          onChange={() => toggleCategory(category)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <label
-                          htmlFor={`category-${category}`}
-                          className="ml-2 text-sm text-gray-700"
-                        >
-                          {category}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-3 border-t border-gray-200 flex justify-between">
-                  <button
-                    onClick={clearCategories}
-                    className="text-sm text-gray-600 hover:text-gray-900"
-                    disabled={selectedCategories.length === 0}
-                  >
-                    Clear all
-                  </button>
-                  <button
-                    onClick={toggleFilter}
-                    className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  >
-                    Apply
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Selected Categories Display */}
-        {selectedCategories.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {selectedCategories.map((category) => (
-              <div
-                key={category}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-              >
-                {category}
-                <button
-                  onClick={() => toggleCategory(category)}
-                  className="ml-1.5 text-blue-600 hover:text-blue-800 focus:outline-none"
-                >
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                   <svg
-                    className="h-3 w-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                </button>
+                </div>
               </div>
-            ))}
-            <button
-              onClick={clearCategories}
-              className="text-xs text-gray-600 hover:text-gray-900 underline"
-            >
-              Clear all
-            </button>
+
+              {/* Filter and Sort Controls */}
+              <div className="flex items-center space-x-4">
+                {/* Sort Button */}
+                <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg shadow-sm p-1">
+                  <button
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      sortBy === "volume"
+                        ? "bg-blue-500 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    onClick={() => handleSortChange("volume")}
+                  >
+                    Volume
+                  </button>
+                  <button
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      sortBy === "liquidity"
+                        ? "bg-blue-500 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    onClick={() => handleSortChange("liquidity")}
+                  >
+                    Liquidity
+                  </button>
+                </div>
+
+                {/* Filter Button */}
+                <div className="relative">
+                  <button
+                    id="filter-button"
+                    className={`flex items-center gap-2 px-3 py-2 border ${
+                      isFilterOpen || selectedCategories.length > 0
+                        ? "border-blue-500 text-blue-500"
+                        : "border-gray-300 text-gray-700"
+                    } rounded-lg bg-white hover:bg-gray-50`}
+                    onClick={toggleFilter}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
+                    </svg>
+                    <span>Filter</span>
+                    {selectedCategories.length > 0 && (
+                      <span className="inline-flex items-center justify-center w-5 h-5 ml-1 text-xs font-bold text-white bg-blue-500 rounded-full">
+                        {selectedCategories.length}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Filter Dropdown */}
+                  {isFilterOpen && (
+                    <div
+                      id="filter-dropdown"
+                      className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+                    >
+                      <div className="p-3 border-b border-gray-200 flex justify-between items-center">
+                        <h3 className="font-medium">Filter by Category</h3>
+                        {selectedCategories.length > 0 && (
+                          <button
+                            className="text-sm text-blue-500 hover:text-blue-700"
+                            onClick={clearCategories}
+                          >
+                            Clear All
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {categories.map((category) => (
+                          <div
+                            key={category}
+                            className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                            onClick={() => toggleCategory(category)}
+                          >
+                            <input
+                              type="checkbox"
+                              id={`category-${category}`}
+                              checked={selectedCategories.includes(category)}
+                              onChange={() => {}}
+                              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <label
+                              htmlFor={`category-${category}`}
+                              className="w-full cursor-pointer"
+                            >
+                              {category}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </div>
 
       {errorMessage ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
@@ -908,24 +863,59 @@ export default function AllMarkets() {
                     )}
                 </motion.div>
               ) : (
-                <div className="text-center py-16">
-                  <p className="text-lg text-gray-600">
-                    No markets found matching &quot;{searchQuery}&quot;
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                  <div className="text-4xl mb-4">🔍</div>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    No markets found
+                  </h3>
+                  <p className="text-gray-600 max-w-md mb-6">
+                    {selectedCategories.length > 0 ? (
+                      <>
+                        No markets match the selected{" "}
+                        {selectedCategories.length === 1
+                          ? "category"
+                          : "categories"}
+                        :
+                        <span className="font-medium">
+                          {" "}
+                          {selectedCategories.join(", ")}
+                        </span>
+                        .
+                        <br />
+                        Polymarket may not have markets in{" "}
+                        {selectedCategories.length === 1
+                          ? "this category"
+                          : "these categories"}{" "}
+                        yet.
+                      </>
+                    ) : searchQuery ? (
+                      <>
+                        No markets match your search: &quot;
+                        <span className="font-medium">{searchQuery}</span>&quot;
+                      </>
+                    ) : (
+                      <>No markets available at this time.</>
+                    )}
                   </p>
-                  {searchQuery && (
+                  {selectedCategories.length > 0 && (
                     <button
-                      onClick={() => setSearchQuery("")}
-                      className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                      onClick={clearCategories}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      Clear Search
+                      Clear Filters
                     </button>
                   )}
                 </div>
               )}
             </>
           ) : (
-            <div className="text-center py-16">
-              <p className="text-lg text-gray-600">No markets available</p>
+            <div className="flex justify-center items-center py-20">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  No markets available
+                </h3>
+                <p className="text-gray-600">Please check back later.</p>
+              </div>
             </div>
           )}
         </div>

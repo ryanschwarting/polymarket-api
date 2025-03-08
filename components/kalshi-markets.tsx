@@ -423,12 +423,21 @@ function AllOptionsModal({
   );
 }
 
-export default function KalshiMarkets() {
+interface KalshiMarketsProps {
+  externalSearchQuery?: string;
+  externalSortOption?: "volume" | "liquidity";
+  externalSelectedCategories?: string[];
+}
+
+export default function KalshiMarkets({
+  externalSearchQuery,
+  externalSortOption,
+  externalSelectedCategories,
+}: KalshiMarketsProps = {}) {
   const [markets, setMarkets] = useState<KalshiMarket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const [selectedMarket, setSelectedMarket] = useState<KalshiMarket | null>(
     null
   );
@@ -445,6 +454,25 @@ export default function KalshiMarkets() {
   const [isAllOptionsModalOpen, setIsAllOptionsModalOpen] = useState(false);
   const LIMIT = 10000;
 
+  // Sync with external state if provided
+  useEffect(() => {
+    if (externalSearchQuery !== undefined) {
+      setSearchQuery(externalSearchQuery);
+    }
+  }, [externalSearchQuery]);
+
+  useEffect(() => {
+    if (externalSortOption !== undefined) {
+      setSortOption(externalSortOption);
+    }
+  }, [externalSortOption]);
+
+  useEffect(() => {
+    if (externalSelectedCategories !== undefined) {
+      setSelectedCategories(externalSelectedCategories);
+    }
+  }, [externalSelectedCategories]);
+
   // Function to toggle event expansion (now opens the modal)
   const toggleEventExpansion = (eventGroup: EventGroup) => {
     setSelectedEventGroup(eventGroup);
@@ -455,11 +483,6 @@ export default function KalshiMarkets() {
   const closeAllOptionsModal = () => {
     setIsAllOptionsModalOpen(false);
     setSelectedEventGroup(null);
-  };
-
-  // Function to load more markets
-  const loadMore = () => {
-    setOffset((prevOffset) => prevOffset + LIMIT);
   };
 
   // Function to format currency
@@ -529,9 +552,6 @@ export default function KalshiMarkets() {
       } else {
         setMarkets((prevMarkets) => [...prevMarkets, ...data.markets]);
       }
-
-      // Check if there are more markets to load
-      setHasMore(data.markets.length === LIMIT);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -552,27 +572,34 @@ export default function KalshiMarkets() {
 
   // Function to toggle category selection
   const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
+    if (externalSelectedCategories === undefined) {
+      setSelectedCategories((prev) =>
+        prev.includes(category)
+          ? prev.filter((c) => c !== category)
+          : [...prev, category]
+      );
+    }
   };
 
   // Function to clear all selected categories
   const clearCategories = () => {
-    setSelectedCategories([]);
-    // No need to reset pagination or fetch - we'll filter client-side
+    if (externalSelectedCategories === undefined) {
+      setSelectedCategories([]);
+    }
   };
 
   // Function to toggle filter dropdown
   const toggleFilter = () => {
-    setIsFilterExpanded(!isFilterExpanded);
+    if (externalSelectedCategories === undefined) {
+      setIsFilterExpanded(!isFilterExpanded);
+    }
   };
 
   // Function to handle sort change
   const handleSortChange = (option: "volume" | "liquidity") => {
-    setSortOption(option);
+    if (externalSortOption === undefined) {
+      setSortOption(option);
+    }
     setOffset(0); // Reset pagination when changing sort
   };
 
@@ -674,510 +701,401 @@ export default function KalshiMarkets() {
   return (
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-          <div className="relative flex-grow">
-            <input
-              type="text"
-              placeholder="Search markets..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              aria-label="Search markets"
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              <svg
-                className="h-5 w-5 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        {/* Only show UI controls if external ones are not provided */}
+        {externalSearchQuery === undefined &&
+          externalSortOption === undefined &&
+          externalSelectedCategories === undefined && (
+            <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+              <div className="relative flex-grow">
+                <input
+                  type="text"
+                  placeholder="Search markets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  aria-label="Search markets"
                 />
-              </svg>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            {/* Sort Button */}
-            <div className="relative">
-              <button
-                onClick={() =>
-                  handleSortChange(
-                    sortOption === "volume" ? "liquidity" : "volume"
-                  )
-                }
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Toggle sort order"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                  />
-                </svg>
-                <span className="text-gray-700">
-                  Sort: {sortOption === "volume" ? "Volume" : "Liquidity"}
-                </span>
-              </button>
-            </div>
-            {/* Filter Button */}
-            <div className="relative">
-              <button
-                id="filter-button"
-                onClick={toggleFilter}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center gap-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Filter by category"
-                aria-expanded={isFilterExpanded}
-                aria-controls="filter-dropdown"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                  />
-                </svg>
-                <span className="text-gray-700">Filter</span>
-                {selectedCategories.length > 0 && (
-                  <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
-                    {selectedCategories.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Filter Dropdown */}
-              {isFilterExpanded && (
-                <div
-                  id="filter-dropdown"
-                  className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
-                >
-                  {/* Sort Options */}
-                  <div className="p-3 border-b border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                      Sort By
-                    </h3>
-                    <div className="flex flex-col space-y-2">
-                      <div className="flex items-center">
-                        <input
-                          id="sort-volume"
-                          type="radio"
-                          name="sort-option"
-                          checked={sortOption === "volume"}
-                          onChange={() => handleSortChange("volume")}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                        />
-                        <label
-                          htmlFor="sort-volume"
-                          className="ml-2 text-sm text-gray-700"
-                        >
-                          Highest Volume
-                        </label>
-                      </div>
-                      <div className="flex items-center">
-                        <input
-                          id="sort-liquidity"
-                          type="radio"
-                          name="sort-option"
-                          checked={sortOption === "liquidity"}
-                          onChange={() => handleSortChange("liquidity")}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                        />
-                        <label
-                          htmlFor="sort-liquidity"
-                          className="ml-2 text-sm text-gray-700"
-                        >
-                          Highest Liquidity
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 border-b border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-700">
-                      Filter by Category
-                    </h3>
-                  </div>
-                  <div className="p-3 max-h-60 overflow-y-auto">
-                    <div className="space-y-2">
-                      {categories.map((category) => (
-                        <div key={category} className="flex items-center">
-                          <input
-                            id={`category-${category}`}
-                            type="checkbox"
-                            checked={selectedCategories.includes(category)}
-                            onChange={() => toggleCategory(category)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                          <label
-                            htmlFor={`category-${category}`}
-                            className="ml-2 text-sm text-gray-700"
-                          >
-                            {category}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="p-3 border-t border-gray-200 flex justify-between">
-                    <button
-                      onClick={clearCategories}
-                      className="text-sm text-gray-600 hover:text-gray-900"
-                      disabled={selectedCategories.length === 0}
-                    >
-                      Clear all
-                    </button>
-                    <button
-                      onClick={toggleFilter}
-                      className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Selected Categories Display */}
-        {selectedCategories.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {selectedCategories.map((category) => (
-              <div
-                key={category}
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${
-                  selectedCategories.includes(category)
-                    ? "bg-slate-200 text-slate-800 border border-slate-300"
-                    : "bg-slate-100 text-slate-700 border border-slate-200"
-                } cursor-pointer hover:bg-slate-200 transition-colors`}
-              >
-                {category}
-                <button
-                  onClick={() => toggleCategory(category)}
-                  className="ml-1.5 text-blue-600 hover:text-blue-800 focus:outline-none"
-                >
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                   <svg
-                    className="h-3 w-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                </button>
+                </div>
               </div>
-            ))}
-            <button
-              onClick={clearCategories}
-              className="text-xs text-gray-600 hover:text-gray-900 underline"
-            >
-              Clear all
-            </button>
-          </div>
-        )}
+              <div className="flex items-center space-x-4">
+                {/* Sort Button */}
+                <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg shadow-sm p-1">
+                  <button
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      sortOption === "volume"
+                        ? "bg-blue-500 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    onClick={() => handleSortChange("volume")}
+                  >
+                    Volume
+                  </button>
+                  <button
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${
+                      sortOption === "liquidity"
+                        ? "bg-blue-500 text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    onClick={() => handleSortChange("liquidity")}
+                  >
+                    Liquidity
+                  </button>
+                </div>
 
-        {isLoading && offset === 0 ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-            <p>Error: {error}</p>
-            <button
-              onClick={() => {
-                setOffset(0);
-                fetchMarkets();
-              }}
-              className="mt-2 text-sm font-medium text-red-800 hover:text-red-900 underline"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : eventGroups.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <h3 className="mt-2 text-lg font-medium text-gray-900">
-              No markets found
-            </h3>
-            <p className="mt-1 text-gray-500">
-              Try adjusting your search or filter criteria
-            </p>
-            <button
-              onClick={clearCategories}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              Clear filters
-            </button>
+                {/* Filter Button */}
+                <div className="relative">
+                  <button
+                    id="filter-button"
+                    className={`flex items-center gap-2 px-3 py-2 border ${
+                      isFilterExpanded || selectedCategories.length > 0
+                        ? "border-blue-500 text-blue-500"
+                        : "border-gray-300 text-gray-700"
+                    } rounded-lg bg-white hover:bg-gray-50 transition-colors`}
+                    onClick={toggleFilter}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
+                    </svg>
+                    <span>Filter</span>
+                    {selectedCategories.length > 0 && (
+                      <span className="inline-flex items-center justify-center w-5 h-5 ml-1 text-xs font-bold text-white bg-blue-500 rounded-full">
+                        {selectedCategories.length}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Filter Dropdown */}
+                  {isFilterExpanded && (
+                    <div
+                      id="filter-dropdown"
+                      className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+                    >
+                      <div className="p-3 border-b border-gray-200 flex justify-between items-center">
+                        <h3 className="font-medium">Filter by Category</h3>
+                        {selectedCategories.length > 0 && (
+                          <button
+                            className="text-sm text-blue-500 hover:text-blue-700"
+                            onClick={clearCategories}
+                          >
+                            Clear All
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {categories.map((category) => (
+                          <div
+                            key={category}
+                            className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                            onClick={() => toggleCategory(category)}
+                          >
+                            <input
+                              type="checkbox"
+                              id={`category-${category}`}
+                              checked={selectedCategories.includes(category)}
+                              onChange={() => {}}
+                              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <label
+                              htmlFor={`category-${category}`}
+                              className="w-full cursor-pointer"
+                            >
+                              {category}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+        {error ? (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+            <strong className="font-bold">Error: </strong>
+            <span className="block sm:inline">{error}</span>
           </div>
         ) : (
           <>
-            {/* Display markets grouped by event in a grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-6">
-              {sortedEventGroups.map((eventGroup) => (
-                <div
-                  key={eventGroup.eventTitle}
-                  className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
-                >
-                  {/* Event Header */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-200">
-                    <div>
-                      <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">
-                        {eventGroup.eventTitle}
-                      </h2>
-                      <div className="flex flex-wrap items-center mt-2 gap-2">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
-                          {eventGroup.category}
-                        </span>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
-                          {eventGroup.markets.length} markets
-                        </span>
-                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
-                          <span className="mr-1 font-normal">Liq:</span>
-                          <span>
-                            {formatCurrency(eventGroup.totalLiquidity)}
-                          </span>
-                        </div>
-                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
-                          <span className="mr-1 font-normal">Vol:</span>
-                          <span>{formatCurrency(eventGroup.totalVolume)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Markets in this event - Now in a grid layout with animation */}
-                  <AnimatePresence>
-                    {selectedEventGroup === eventGroup && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="overflow-hidden"
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <>
+                {sortedEventGroups.length > 0 ? (
+                  <div className="space-y-8">
+                    {sortedEventGroups.map((eventGroup) => (
+                      <div
+                        key={eventGroup.eventTitle}
+                        className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
                       >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                          {eventGroup.markets.map((market) => (
-                            <div
-                              key={market.id}
-                              className="bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow"
-                            >
-                              <div className="p-3">
-                                {/* Market Title - Only show if different from option_name */}
-                                {market.title !== market.option_name && (
-                                  <h3 className="text-sm font-medium text-gray-700 mb-2 line-clamp-1">
-                                    {market.title}
-                                  </h3>
-                                )}
-
-                                {/* Option Name */}
-                                <div className="mb-3">
-                                  {market.option_name ? (
-                                    <p className="text-base font-bold text-gray-800 line-clamp-1">
-                                      {market.option_name}
-                                    </p>
-                                  ) : (
-                                    <p className="text-base font-bold text-gray-800 line-clamp-1">
-                                      {market.title}
-                                    </p>
-                                  )}
-                                </div>
-
-                                {/* Yes/No Prices */}
-                                <div className="flex space-x-2 mb-3">
-                                  <div className="flex-1 bg-green-50 border border-green-100 rounded-md px-2 py-1 text-center">
-                                    <p className="text-xs text-green-700 mb-1">
-                                      Yes
-                                    </p>
-                                    <p className="text-sm font-bold text-green-800">
-                                      {market.yes_bid
-                                        ? `${Math.round(market.yes_bid)}¢`
-                                        : "N/A"}
-                                    </p>
-                                  </div>
-                                  <div className="flex-1 bg-red-50 border border-red-100 rounded-md px-2 py-1 text-center">
-                                    <p className="text-xs text-red-700 mb-1">
-                                      No
-                                    </p>
-                                    <p className="text-sm font-bold text-red-800">
-                                      {market.no_bid
-                                        ? `${Math.round(market.no_bid)}¢`
-                                        : "N/A"}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Market Stats */}
-                                <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
-                                  <div className="bg-blue-50 rounded-md px-2 py-1">
-                                    <p className="text-xs text-blue-700">
-                                      Volume
-                                    </p>
-                                    <p className="text-sm font-semibold text-blue-900">
-                                      {formatCurrency(market.volume)}
-                                    </p>
-                                  </div>
-                                  <div className="bg-indigo-50 rounded-md px-2 py-1">
-                                    <p className="text-xs text-indigo-700">
-                                      Liquidity
-                                    </p>
-                                    <p className="text-sm font-semibold text-indigo-900">
-                                      {formatCurrency(market.liquidity)}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500">
-                                      Expires
-                                    </p>
-                                    <p className="text-xs font-medium text-gray-900">
-                                      {formatDate(market.expiration_time)}
-                                    </p>
-                                  </div>
-                                </div>
+                        {/* Event Header */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-200">
+                          <div>
+                            <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                              {eventGroup.eventTitle}
+                            </h2>
+                            <div className="flex flex-wrap items-center mt-2 gap-2">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
+                                {eventGroup.category}
+                              </span>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
+                                {eventGroup.markets.length} markets
+                              </span>
+                              <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
+                                <span className="mr-1 font-normal">Liq:</span>
+                                <span>
+                                  {formatCurrency(eventGroup.totalLiquidity)}
+                                </span>
+                              </div>
+                              <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
+                                <span className="mr-1 font-normal">Vol:</span>
+                                <span>
+                                  {formatCurrency(eventGroup.totalVolume)}
+                                </span>
                               </div>
                             </div>
-                          ))}
+                          </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
 
-                  {/* Preview of first market when collapsed */}
-                  {eventGroup.markets.length > 0 && (
-                    <div className="p-4 border-t border-gray-200 bg-gray-50">
-                      <div className="flex flex-col space-y-2">
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium">Current Favorite:</span>{" "}
-                          {(() => {
-                            const mostLikelyMarket = getMostLikelyMarket(
-                              eventGroup.markets
-                            );
-                            return (
-                              <span className="text-gray-800">
-                                {mostLikelyMarket?.yes_sub_title ||
-                                  mostLikelyMarket?.option_name ||
-                                  mostLikelyMarket?.title ||
-                                  "Unknown"}
-                                {mostLikelyMarket?.yes_bid
-                                  ? ` (${mostLikelyMarket.yes_bid.toFixed(
-                                      1
-                                    )}% chance)`
-                                  : ""}
-                              </span>
-                            );
-                          })()}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <button
-                            onClick={() => toggleEventExpansion(eventGroup)}
-                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                          >
-                            View All Options
-                          </button>
-                          {eventGroup.markets.length > 0 && (
-                            <Link
-                              href={`https://kalshi.com/markets/${
-                                eventGroup.markets[0].ticker.split("-")[0]
-                              }`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                        {/* Markets in this event - Now in a grid layout with animation */}
+                        <AnimatePresence>
+                          {selectedEventGroup === eventGroup && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="overflow-hidden"
                             >
-                              View on Kalshi
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-3 w-3 ml-1"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1.5}
-                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                />
-                              </svg>
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                                {eventGroup.markets.map((market) => (
+                                  <div
+                                    key={market.id}
+                                    className="bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow"
+                                  >
+                                    <div className="p-3">
+                                      {/* Market Title - Only show if different from option_name */}
+                                      {market.title !== market.option_name && (
+                                        <h3 className="text-sm font-medium text-gray-700 mb-2 line-clamp-1">
+                                          {market.title}
+                                        </h3>
+                                      )}
 
-            {/* Load More Button */}
-            {hasMore && (
-              <div className="mt-8 flex justify-center">
-                <button
-                  onClick={loadMore}
-                  disabled={isLoading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
+                                      {/* Option Name */}
+                                      <div className="mb-3">
+                                        {market.option_name ? (
+                                          <p className="text-base font-bold text-gray-800 line-clamp-1">
+                                            {market.option_name}
+                                          </p>
+                                        ) : (
+                                          <p className="text-base font-bold text-gray-800 line-clamp-1">
+                                            {market.title}
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      {/* Yes/No Prices */}
+                                      <div className="flex space-x-2 mb-3">
+                                        <div className="flex-1 bg-green-50 border border-green-100 rounded-md px-2 py-1 text-center">
+                                          <p className="text-xs text-green-700 mb-1">
+                                            Yes
+                                          </p>
+                                          <p className="text-sm font-bold text-green-800">
+                                            {market.yes_bid
+                                              ? `${Math.round(market.yes_bid)}¢`
+                                              : "N/A"}
+                                          </p>
+                                        </div>
+                                        <div className="flex-1 bg-red-50 border border-red-100 rounded-md px-2 py-1 text-center">
+                                          <p className="text-xs text-red-700 mb-1">
+                                            No
+                                          </p>
+                                          <p className="text-sm font-bold text-red-800">
+                                            {market.no_bid
+                                              ? `${Math.round(market.no_bid)}¢`
+                                              : "N/A"}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      {/* Market Stats */}
+                                      <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
+                                        <div className="bg-blue-50 rounded-md px-2 py-1">
+                                          <p className="text-xs text-blue-700">
+                                            Volume
+                                          </p>
+                                          <p className="text-sm font-semibold text-blue-900">
+                                            {formatCurrency(market.volume)}
+                                          </p>
+                                        </div>
+                                        <div className="bg-indigo-50 rounded-md px-2 py-1">
+                                          <p className="text-xs text-indigo-700">
+                                            Liquidity
+                                          </p>
+                                          <p className="text-sm font-semibold text-indigo-900">
+                                            {formatCurrency(market.liquidity)}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-gray-500">
+                                            Expires
+                                          </p>
+                                          <p className="text-xs font-medium text-gray-900">
+                                            {formatDate(market.expiration_time)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Preview of first market when collapsed */}
+                        {eventGroup.markets.length > 0 && (
+                          <div className="p-4 border-t border-gray-200 bg-gray-50">
+                            <div className="flex flex-col space-y-2">
+                              <div className="text-sm text-gray-600">
+                                <span className="font-medium">
+                                  Current Favorite:
+                                </span>{" "}
+                                {(() => {
+                                  const mostLikelyMarket = getMostLikelyMarket(
+                                    eventGroup.markets
+                                  );
+                                  return (
+                                    <span className="text-gray-800">
+                                      {mostLikelyMarket?.yes_sub_title ||
+                                        mostLikelyMarket?.option_name ||
+                                        mostLikelyMarket?.title ||
+                                        "Unknown"}
+                                      {mostLikelyMarket?.yes_bid
+                                        ? ` (${mostLikelyMarket.yes_bid.toFixed(
+                                            1
+                                          )}% chance)`
+                                        : ""}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <button
+                                  onClick={() =>
+                                    toggleEventExpansion(eventGroup)
+                                  }
+                                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  View All Options
+                                </button>
+                                {eventGroup.markets.length > 0 && (
+                                  <Link
+                                    href={`https://kalshi.com/markets/${
+                                      eventGroup.markets[0].ticker.split("-")[0]
+                                    }`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
+                                  >
+                                    View on Kalshi
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3 w-3 ml-1"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1.5}
+                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                      />
+                                    </svg>
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                    <div className="text-4xl mb-4">🔍</div>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                      No markets found
+                    </h3>
+                    <p className="text-gray-600 max-w-md mb-6">
+                      {selectedCategories.length > 0 ? (
+                        <>
+                          No markets match the selected{" "}
+                          {selectedCategories.length === 1
+                            ? "category"
+                            : "categories"}
+                          :
+                          <span className="font-medium">
+                            {" "}
+                            {selectedCategories.join(", ")}
+                          </span>
+                          .
+                          <br />
+                          Kalshi may not have markets in{" "}
+                          {selectedCategories.length === 1
+                            ? "this category"
+                            : "these categories"}{" "}
+                          yet.
+                        </>
+                      ) : searchQuery ? (
+                        <>
+                          No markets match your search: &quot;
+                          <span className="font-medium">{searchQuery}</span>
+                          &quot;
+                        </>
+                      ) : (
+                        <>No markets available at this time.</>
+                      )}
+                    </p>
+                    {selectedCategories.length > 0 && (
+                      <button
+                        onClick={clearCategories}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Loading...
-                    </>
-                  ) : (
-                    "Load More"
-                  )}
-                </button>
-              </div>
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

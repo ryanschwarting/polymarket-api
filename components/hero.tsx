@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, BarChart3, Globe } from "lucide-react";
-import Link from "next/link";
+import { TrendingUp, Globe } from "lucide-react";
 
 export default function Hero() {
   return (
@@ -58,9 +57,9 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Discover, analyze, and compare top markets from leading prediction
-            platforms. Each market connects you directly to trading platforms
-            where you can place your bets with ease.
+            Your gateway to informed decision-making in the world of prediction
+            markets. Aggregates data from Polymarket and Kalshi, giving you
+            easier access to view markets all in one place.
           </motion.p>
         </div>
 
@@ -73,10 +72,9 @@ export default function Hero() {
         >
           <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700/50">
             <div className="flex items-center mb-4">
-              <BarChart3 className="h-8 w-8 text-indigo-400 mr-3" />
               <Globe className="h-8 w-8 text-indigo-400" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Global Analytics</h3>
+            <h3 className="text-xl font-semibold mb-2">Global Insights</h3>
             <p className="text-slate-400">
               Track real-time market movements across multiple prediction
               platforms in one unified interface with advanced analytics.
