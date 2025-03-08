@@ -264,21 +264,21 @@ function AllOptionsModal({
             <h3 className="text-lg font-semibold text-gray-900">
               {eventGroup.eventTitle}
             </h3>
-            <div className="flex flex-wrap items-center mt-1 gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <div className="flex flex-wrap items-center mt-2 gap-2">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
                 {eventGroup.category}
               </span>
-              <span className="text-sm text-gray-500">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
                 {eventGroup.markets.length} markets
               </span>
-              <span className="mx-1 text-gray-300">•</span>
-              <span className="text-sm text-gray-500">
-                Vol: {formatCurrency(eventGroup.totalVolume)}
-              </span>
-              <span className="mx-1 text-gray-300">•</span>
-              <span className="text-sm text-gray-500">
-                Liq: {formatCurrency(eventGroup.totalLiquidity)}
-              </span>
+              <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
+                <span className="mr-1 font-normal">Liq:</span>
+                <span>{formatCurrency(eventGroup.totalLiquidity)}</span>
+              </div>
+              <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
+                <span className="mr-1 font-normal">Vol:</span>
+                <span>{formatCurrency(eventGroup.totalVolume)}</span>
+              </div>
             </div>
           </div>
           <button
@@ -351,15 +351,15 @@ function AllOptionsModal({
 
                   {/* Market Stats */}
                   <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
-                    <div>
-                      <p className="text-xs text-gray-500">Volume</p>
-                      <p className="text-xs font-medium text-gray-900">
+                    <div className="bg-blue-50 rounded-md px-2 py-1">
+                      <p className="text-xs text-blue-700">Volume</p>
+                      <p className="text-sm font-semibold text-blue-900">
                         {formatCurrency(market.volume)}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Liquidity</p>
-                      <p className="text-xs font-medium text-gray-900">
+                    <div className="bg-indigo-50 rounded-md px-2 py-1">
+                      <p className="text-xs text-indigo-700">Liquidity</p>
+                      <p className="text-sm font-semibold text-indigo-900">
                         {formatCurrency(market.liquidity)}
                       </p>
                     </div>
@@ -919,7 +919,11 @@ export default function KalshiMarkets() {
             {selectedCategories.map((category) => (
               <div
                 key={category}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${
+                  selectedCategories.includes(category)
+                    ? "bg-slate-200 text-slate-800 border border-slate-300"
+                    : "bg-slate-100 text-slate-700 border border-slate-200"
+                } cursor-pointer hover:bg-slate-200 transition-colors`}
               >
                 {category}
                 <button
@@ -1010,21 +1014,23 @@ export default function KalshiMarkets() {
                       <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">
                         {eventGroup.eventTitle}
                       </h2>
-                      <div className="flex flex-wrap items-center mt-1 gap-1">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <div className="flex flex-wrap items-center mt-2 gap-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
                           {eventGroup.category}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
                           {eventGroup.markets.length} markets
                         </span>
-                        <span className="mx-1 text-gray-300">•</span>
-                        <span className="text-xs text-gray-500">
-                          Vol: {formatCurrency(eventGroup.totalVolume)}
-                        </span>
-                        <span className="mx-1 text-gray-300">•</span>
-                        <span className="text-xs text-gray-500">
-                          Liq: {formatCurrency(eventGroup.totalLiquidity)}
-                        </span>
+                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
+                          <span className="mr-1 font-normal">Liq:</span>
+                          <span>
+                            {formatCurrency(eventGroup.totalLiquidity)}
+                          </span>
+                        </div>
+                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
+                          <span className="mr-1 font-normal">Vol:</span>
+                          <span>{formatCurrency(eventGroup.totalVolume)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1092,19 +1098,19 @@ export default function KalshiMarkets() {
 
                                 {/* Market Stats */}
                                 <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
-                                  <div>
-                                    <p className="text-xs text-gray-500">
+                                  <div className="bg-blue-50 rounded-md px-2 py-1">
+                                    <p className="text-xs text-blue-700">
                                       Volume
                                     </p>
-                                    <p className="text-xs font-medium text-gray-900">
+                                    <p className="text-sm font-semibold text-blue-900">
                                       {formatCurrency(market.volume)}
                                     </p>
                                   </div>
-                                  <div>
-                                    <p className="text-xs text-gray-500">
+                                  <div className="bg-indigo-50 rounded-md px-2 py-1">
+                                    <p className="text-xs text-indigo-700">
                                       Liquidity
                                     </p>
-                                    <p className="text-xs font-medium text-gray-900">
+                                    <p className="text-sm font-semibold text-indigo-900">
                                       {formatCurrency(market.liquidity)}
                                     </p>
                                   </div>
@@ -1226,7 +1232,7 @@ export default function KalshiMarkets() {
                 <button
                   onClick={loadMore}
                   disabled={isLoading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
                   {isLoading ? (
                     <>
