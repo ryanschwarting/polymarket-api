@@ -542,7 +542,7 @@ export default function PolymarketMarkets({
   }, []);
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto">
       {/* Only render search/filter UI if no external controls */}
       {externalSearchQuery === undefined &&
         externalSortOption === undefined &&

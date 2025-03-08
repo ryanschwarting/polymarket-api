@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import { KalshiMarket } from "@/app/api/kalshi/markets/route";
 
 // Define the response type
@@ -123,7 +122,7 @@ function OutcomesModal({
         )}
 
         {/* Current favorite section */}
-        <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+        <div className="px-6 py-3 border-b border-gray-200">
           <p className="text-sm text-gray-700">
             <span className="font-medium">Current favorite:</span>{" "}
             <span
@@ -699,8 +698,8 @@ export default function KalshiMarkets({
   });
 
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-gray-50 min-h-screen">
+      <div className="container mx-auto px-4 py-6">
         {/* Only show UI controls if external ones are not provided */}
         {externalSearchQuery === undefined &&
           externalSortOption === undefined &&
@@ -849,11 +848,19 @@ export default function KalshiMarkets({
             ) : (
               <>
                 {sortedEventGroups.length > 0 ? (
-                  <div className="space-y-8">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
                     {sortedEventGroups.map((eventGroup) => (
-                      <div
+                      <motion.div
                         key={eventGroup.eventTitle}
-                        className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
                       >
                         {/* Event Header */}
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-200">
@@ -868,23 +875,113 @@ export default function KalshiMarkets({
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
                                 {eventGroup.markets.length} markets
                               </span>
-                              <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
-                                <span className="mr-1 font-normal">Liq:</span>
-                                <span>
-                                  {formatCurrency(eventGroup.totalLiquidity)}
-                                </span>
-                              </div>
-                              <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-200 text-slate-600 border border-slate-300">
-                                <span className="mr-1 font-normal">Vol:</span>
-                                <span>
-                                  {formatCurrency(eventGroup.totalVolume)}
-                                </span>
-                              </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Markets in this event - Now in a grid layout with animation */}
+                        {/* Market Stats */}
+                        <div className="grid grid-cols-2 gap-3 p-4">
+                          <div className="bg-blue-50 rounded-lg p-2">
+                            <p className="text-xs text-blue-700 font-medium">
+                              Volume
+                            </p>
+                            <p className="text-sm font-bold text-blue-900">
+                              {formatCurrency(eventGroup.totalVolume)}
+                            </p>
+                          </div>
+                          <div className="bg-purple-50 rounded-lg p-2">
+                            <p className="text-xs text-purple-700 font-medium">
+                              Liquidity
+                            </p>
+                            <p className="text-sm font-bold text-purple-900">
+                              {formatCurrency(eventGroup.totalLiquidity)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Preview of first market when collapsed */}
+                        <div className="p-4 border-t border-gray-200 bg-gray-50">
+                          <div className="flex flex-col space-y-2">
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">
+                                Current Favorite:
+                              </span>{" "}
+                              {(() => {
+                                const mostLikelyMarket = getMostLikelyMarket(
+                                  eventGroup.markets
+                                );
+                                return (
+                                  <span className="text-gray-800">
+                                    {mostLikelyMarket?.yes_sub_title ||
+                                      mostLikelyMarket?.option_name ||
+                                      mostLikelyMarket?.title ||
+                                      "Unknown"}
+                                    {mostLikelyMarket?.yes_bid &&
+                                      ` (${Math.round(
+                                        mostLikelyMarket.yes_bid
+                                      )}% chance)`}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                            <div className="flex pt-2 justify-between">
+                              <button
+                                onClick={() => toggleEventExpansion(eventGroup)}
+                                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4 mr-1.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1.5}
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1.5}
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                  />
+                                </svg>
+                                {selectedEventGroup === eventGroup
+                                  ? "Hide Markets"
+                                  : "See Outcome Odds"}
+                              </button>
+                              <a
+                                href={`https://kalshi.com/events/${
+                                  getMostLikelyMarket(eventGroup.markets).ticker
+                                }`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
+                              >
+                                View on Kalshi
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4 ml-1.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1.5}
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                  />
+                                </svg>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Markets in this event - Already in a grid layout with animation */}
                         <AnimatePresence>
                           {selectedEventGroup === eventGroup && (
                             <motion.div
@@ -894,7 +991,7 @@ export default function KalshiMarkets({
                               transition={{ duration: 0.3 }}
                               className="overflow-hidden"
                             >
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                                 {eventGroup.markets.map((market) => (
                                   <div
                                     key={market.id}
@@ -979,76 +1076,9 @@ export default function KalshiMarkets({
                             </motion.div>
                           )}
                         </AnimatePresence>
-
-                        {/* Preview of first market when collapsed */}
-                        {eventGroup.markets.length > 0 && (
-                          <div className="p-4 border-t border-gray-200 bg-gray-50">
-                            <div className="flex flex-col space-y-2">
-                              <div className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                  Current Favorite:
-                                </span>{" "}
-                                {(() => {
-                                  const mostLikelyMarket = getMostLikelyMarket(
-                                    eventGroup.markets
-                                  );
-                                  return (
-                                    <span className="text-gray-800">
-                                      {mostLikelyMarket?.yes_sub_title ||
-                                        mostLikelyMarket?.option_name ||
-                                        mostLikelyMarket?.title ||
-                                        "Unknown"}
-                                      {mostLikelyMarket?.yes_bid
-                                        ? ` (${mostLikelyMarket.yes_bid.toFixed(
-                                            1
-                                          )}% chance)`
-                                        : ""}
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <button
-                                  onClick={() =>
-                                    toggleEventExpansion(eventGroup)
-                                  }
-                                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                                >
-                                  View All Options
-                                </button>
-                                {eventGroup.markets.length > 0 && (
-                                  <Link
-                                    href={`https://kalshi.com/markets/${
-                                      eventGroup.markets[0].ticker.split("-")[0]
-                                    }`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors focus:outline-none"
-                                  >
-                                    View on Kalshi
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-3 w-3 ml-1"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={1.5}
-                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                      />
-                                    </svg>
-                                  </Link>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                     <div className="text-4xl mb-4">🔍</div>
