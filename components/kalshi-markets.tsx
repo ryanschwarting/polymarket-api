@@ -212,15 +212,7 @@ function AllOptionsModal({
   formatCurrency: (value: number) => string;
   formatDate: (dateString: string) => string;
 }) {
-  // Move useState outside of conditional to fix React Hook rules error
-  const [expandedMarketId, setExpandedMarketId] = useState<string | null>(null);
-
   if (!isOpen) return null;
-
-  // Format outcome price
-  const formatOutcomePrice = (price: number): string => {
-    return `${price ? Math.round(price) : "0"}¢`;
-  };
 
   // Helper function to determine text color based on price
   const getPriceColorClass = (price: number): string => {
@@ -253,40 +245,11 @@ function AllOptionsModal({
     }, markets[0]);
   };
 
-  // Process outcomes for display
-  const getProcessedOutcomes = (market: KalshiMarket) => {
-    if (
-      market.outcomes &&
-      market.outcomePrices &&
-      Array.isArray(market.outcomes)
-    ) {
-      return market.outcomes
-        .map((outcome, index) => {
-          const price = Array.isArray(market.outcomePrices)
-            ? market.outcomePrices[index]
-            : market.outcomePrices?.[outcome];
-
-          if (price === undefined) return null;
-
-          return { id: String(index), title: outcome, yesPrice: price };
-        })
-        .filter((item) => item !== null);
-    }
-
-    return [];
-  };
-
   // Handle click on the backdrop to close the modal
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only close if the click was directly on the backdrop, not on its children
     if (e.target === e.currentTarget) {
       onClose();
     }
-  };
-
-  // Toggle market details expansion
-  const toggleMarketDetails = (marketId: string) => {
-    setExpandedMarketId(expandedMarketId === marketId ? null : marketId);
   };
 
   return (
@@ -580,12 +543,6 @@ export default function KalshiMarkets() {
   useEffect(() => {
     fetchMarkets();
   }, [fetchMarkets]);
-
-  // Function to open the outcomes modal
-  const openOutcomesModal = (market: KalshiMarket) => {
-    setSelectedMarket(market);
-    setIsModalOpen(true);
-  };
 
   // Function to close the outcomes modal
   const closeOutcomesModal = () => {
@@ -1130,7 +1087,8 @@ export default function KalshiMarkets() {
                             );
                             return (
                               <span className="text-gray-800">
-                                {mostLikelyMarket?.option_name ||
+                                {mostLikelyMarket?.yes_sub_title ||
+                                  mostLikelyMarket?.option_name ||
                                   mostLikelyMarket?.title ||
                                   "Unknown"}
                                 {mostLikelyMarket?.yes_bid

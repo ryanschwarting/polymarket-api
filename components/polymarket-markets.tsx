@@ -85,22 +85,6 @@ function OutcomesModal({
     return "text-red-600";
   };
 
-  // Helper function to determine background color based on price
-  const getPriceBgClass = (price: number): string => {
-    if (price > 0.5) return "bg-green-50";
-    if (price > 0.2) return "bg-amber-50";
-    if (price > 0.05) return "bg-orange-50";
-    return "bg-red-50";
-  };
-
-  // Helper function to determine border color based on price
-  const getPriceBorderClass = (price: number): string => {
-    if (price > 0.5) return "border-green-200";
-    if (price > 0.2) return "border-amber-200";
-    if (price > 0.05) return "border-orange-200";
-    return "border-red-200";
-  };
-
   // Handle click on the backdrop to close the modal
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only close if the click was directly on the backdrop, not on its children
@@ -235,7 +219,6 @@ function OutcomesModal({
                 {processedOutcomes.map((item) => {
                   if (!item) return null;
                   const priceColorClass = getPriceColorClass(item.yesPrice);
-                  const priceBorderClass = getPriceBorderClass(item.yesPrice);
 
                   return (
                     <div
