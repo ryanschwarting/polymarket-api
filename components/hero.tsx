@@ -1,30 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function Hero() {
-  const pathname = usePathname();
-
-  // Determine the title and description based on the current path
-  const getHeroContent = () => {
-    if (pathname === "/kalshi") {
-      return {
-        title: "Kalshi Top Markets",
-        description:
-          "Explore prediction markets grouped by events, with real-time pricing data",
-      };
-    }
-
-    // Default content for home/polymarket
-    return {
-      title: "Polymarket Top Markets",
-      description:
-        "Explore top prediction markets, sorted by volume or liquidity",
-    };
-  };
-
-  const { title, description } = getHeroContent();
-
   return (
     <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 to-blue-700 text-white">
       <div className="absolute inset-0 opacity-10">
@@ -50,13 +28,31 @@ export default function Hero() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-between">
           <div className="md:w-2/3">
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-              {title}
-            </h1>
-            <p className="text-xl md:text-2xl font-medium text-blue-100 max-w-2xl">
-              {description}
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <motion.h1
+              className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              Prediction Markets Explorer
+            </motion.h1>
+            <motion.p
+              className="text-xl md:text-2xl font-medium text-blue-100 max-w-2xl"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              Compare top markets from{" "}
+              <span className="font-bold">Polymarket</span> and{" "}
+              <span className="font-bold">Kalshi</span> — explore real-time
+              data, volume, and liquidity across leading prediction platforms
+            </motion.p>
+            <motion.div
+              className="mt-8 flex flex-wrap gap-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
               <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -99,7 +95,7 @@ export default function Hero() {
                 </svg>
                 <span>Trending Markets</span>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

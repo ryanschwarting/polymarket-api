@@ -30,8 +30,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navbar />
         <Hero />
+        <Navbar />
         <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
           {children}
         </main>

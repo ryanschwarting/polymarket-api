@@ -1171,7 +1171,9 @@ export default function KalshiMarkets() {
                                   mostLikelyMarket?.title ||
                                   "Unknown"}
                                 {mostLikelyMarket?.yes_bid
-                                  ? ` (${mostLikelyMarket.yes_bid.toFixed(1)}%)`
+                                  ? ` (${mostLikelyMarket.yes_bid.toFixed(
+                                      1
+                                    )}% chance)`
                                   : ""}
                               </span>
                             );
