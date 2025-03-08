@@ -1,105 +1,102 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { TrendingUp, BarChart3, Globe } from "lucide-react";
+import Link from "next/link";
 
 export default function Hero() {
   return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 to-blue-700 text-white">
-      <div className="absolute inset-0 opacity-10">
-        <svg className="h-full w-full" viewBox="0 0 800 800">
-          <defs>
-            <pattern
-              id="grid"
-              width="40"
-              height="40"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 40 0 L 0 0 0 40"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div className="md:w-2/3">
-            <motion.h1
-              className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              Prediction Markets Explorer
-            </motion.h1>
-            <motion.p
-              className="text-xl md:text-2xl font-medium text-blue-100 max-w-2xl"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              Compare top markets from{" "}
-              <span className="font-bold">Polymarket</span> and{" "}
-              <span className="font-bold">Kalshi</span> — explore real-time
-              data, volume, and liquidity across leading prediction platforms
-            </motion.p>
-            <motion.div
-              className="mt-8 flex flex-wrap gap-4"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>Volume & Liquidity</span>
-              </div>
-              <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z"
-                    clipRule="evenodd"
-                  />
-                  <path d="M10 4a1 1 0 011 1v4.586l2.707 2.707a1 1 0 01-1.414 1.414l-3-3A1 1 0 019 10V5a1 1 0 011-1z" />
-                </svg>
-                <span>Real-Time Data</span>
-              </div>
-              <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-                </svg>
-                <span>Trending Markets</span>
-              </div>
-            </motion.div>
-          </div>
+    <div className="relative overflow-hidden bg-slate-900 text-white">
+      {/* Background gradient and pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950">
+        <div className="absolute inset-0 opacity-5">
+          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern
+                id="dots"
+                width="30"
+                height="30"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle cx="2" cy="2" r="1" fill="currentColor" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#dots)" />
+          </svg>
         </div>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent"></div>
+
+      {/* Animated accent shapes */}
+      <div className="absolute top-20 right-[10%] w-72 h-72 bg-blue-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-20 left-[5%] w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl" />
+
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
+        <div className="flex flex-col items-center text-center mb-12 md:mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-500/10 text-indigo-300 mb-6"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Explore the top prediction markets
+          </motion.div>
+
+          <motion.h1
+            className="text-4xl md:text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            Prediction Markets Explorer
+          </motion.h1>
+
+          <motion.p
+            className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            Discover, analyze, and compare top markets from leading prediction
+            platforms. Each market connects you directly to trading platforms
+            where you can place your bets with ease.
+          </motion.p>
+        </div>
+
+        {/* Feature highlights */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700/50">
+            <div className="flex items-center mb-4">
+              <BarChart3 className="h-8 w-8 text-indigo-400 mr-3" />
+              <Globe className="h-8 w-8 text-indigo-400" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Global Analytics</h3>
+            <p className="text-slate-400">
+              Track real-time market movements across multiple prediction
+              platforms in one unified interface with advanced analytics.
+            </p>
+          </div>
+
+          <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700/50">
+            <div className="flex items-center mb-4">
+              <TrendingUp className="h-8 w-8 text-indigo-400" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">
+              One-Click Market Access
+            </h3>
+            <p className="text-slate-400">
+              Analyze markets here, then jump directly to the respective
+              prediction platforms to place your predictions.
+            </p>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
