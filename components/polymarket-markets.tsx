@@ -711,7 +711,7 @@ export default function PolymarketMarkets({
                         <div className="flex items-start mb-4">
                           {market.image && (
                             <div className="flex-shrink-0 mr-3">
-                              <div className="relative h-12 w-12 rounded-full overflow-hidden">
+                              <div className="relative h-14 w-14 rounded-full overflow-hidden border border-zinc-200">
                                 <Image
                                   src={market.image}
                                   alt={market.title}
@@ -743,7 +743,7 @@ export default function PolymarketMarkets({
                                 </span>
                               )}
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">
+                            <h3 className="h-10 text-base font-semibold text-gray-900 line-clamp-2 leading-tight">
                               {market.title}
                             </h3>
                           </div>
@@ -752,38 +752,46 @@ export default function PolymarketMarkets({
                         {/* Market Stats */}
                         <div className="grid grid-cols-2 gap-3 mb-4">
                           <div className="bg-blue-50 rounded-lg p-2">
-                            <p className="text-xs text-blue-700 font-medium">
-                              Volume
-                            </p>
-                            <p className="text-sm font-bold text-blue-900">
-                              {formatCurrency(market.volume)}
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-blue-700 font-medium">
+                                Volume
+                              </p>
+                              <p className="text-sm font-bold text-blue-900">
+                                {formatCurrency(market.volume)}
+                              </p>
+                            </div>
                           </div>
                           <div className="bg-purple-50 rounded-lg p-2">
-                            <p className="text-xs text-purple-700 font-medium">
-                              Liquidity
-                            </p>
-                            <p className="text-sm font-bold text-purple-900">
-                              {formatCurrency(market.liquidity)}
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-purple-700 font-medium">
+                                Liquidity
+                              </p>
+                              <p className="text-sm font-bold text-purple-900">
+                                {formatCurrency(market.liquidity)}
+                              </p>
+                            </div>
                           </div>
                           <div className="bg-amber-50 rounded-lg p-2">
-                            <p className="text-xs text-amber-700 font-medium">
-                              24h Volume
-                            </p>
-                            <p className="text-sm font-bold text-amber-900">
-                              {market.volume24hr
-                                ? formatCurrency(market.volume24hr)
-                                : "N/A"}
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-amber-700 font-medium">
+                                24h Volume
+                              </p>
+                              <p className="text-sm font-bold text-amber-900">
+                                {market.volume24hr
+                                  ? formatCurrency(market.volume24hr)
+                                  : "N/A"}
+                              </p>
+                            </div>
                           </div>
                           <div className="bg-green-50 rounded-lg p-2">
-                            <p className="text-xs text-green-700 font-medium">
-                              End Date
-                            </p>
-                            <p className="text-sm font-bold text-green-900">
-                              {formatDate(market.endDate)}
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-green-700 font-medium">
+                                End Date
+                              </p>
+                              <p className="text-sm font-bold text-green-900">
+                                {formatDate(market.endDate)}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
