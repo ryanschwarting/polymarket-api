@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Hero from "@/components/hero";
+import Footer from "@/components/footer";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
           {children}
         </main>
+        <Footer />
       </body>
     </html>
   );

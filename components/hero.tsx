@@ -57,7 +57,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Your gateway to informed decision-making in the world of prediction
+            Your gateway to informed decision making in the world of prediction
             markets. Aggregates data from Polymarket and Kalshi, giving you
             easier access to view markets all in one place.
           </motion.p>
