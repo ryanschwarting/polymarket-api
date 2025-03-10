@@ -172,10 +172,10 @@ function OutcomesModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm overflow-hidden"
       onClick={handleBackdropClick}
     >
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-xl">
+      <div className="relative w-full max-w-lg bg-white shadow-xl rounded-xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Modal header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
           <h3 className="text-lg font-semibold text-gray-900">
@@ -211,8 +211,8 @@ function OutcomesModal({
           </div>
         )}
 
-        {/* Modal content */}
-        <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-6">
+        {/* Modal content - Fixed the overflow issue by ensuring proper scrolling */}
+        <div className="overflow-y-auto flex-1 p-6">
           <div className="mb-4">
             {processedOutcomes.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -258,7 +258,7 @@ function OutcomesModal({
         </div>
 
         {/* Modal footer */}
-        <div className="sticky bottom-0 z-10 border-t border-gray-200 bg-gray-50 px-6 py-4">
+        <div className="sticky bottom-0 z-10 border-t border-gray-200 bg-gray-50 px-6 py-4 mt-auto">
           <div className="flex justify-end">
             <button
               onClick={onClose}
