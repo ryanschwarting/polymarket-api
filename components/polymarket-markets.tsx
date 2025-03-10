@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import React from "react";
 
 // Define the Market interface
 interface Market {
@@ -70,6 +71,8 @@ function OutcomesModal({
   onClose: () => void;
   market: Market;
 }) {
+  const [viewMode, setViewMode] = React.useState<"card" | "list">("card");
+
   if (!isOpen) return null;
 
   // Helper function to format outcome price
@@ -91,6 +94,11 @@ function OutcomesModal({
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  // Toggle between card and list view
+  const handleToggleView = () => {
+    setViewMode(viewMode === "card" ? "list" : "card");
   };
 
   // Process nested markets for display
@@ -211,42 +219,154 @@ function OutcomesModal({
           </div>
         )}
 
+        {/* View Toggle */}
+        <div className="px-6 pt-4 flex justify-end">
+          <div className="inline-flex rounded-md shadow-sm" role="group">
+            <button
+              type="button"
+              onClick={handleToggleView}
+              className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
+                viewMode === "card"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+              }`}
+              aria-label="Card view"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleView}
+              className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
+                viewMode === "list"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+              }`}
+              aria-label="List view"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
         {/* Modal content - Fixed the overflow issue by ensuring proper scrolling */}
-        <div className="overflow-y-auto flex-1 p-6 md:p-8">
+        <div className="overflow-y-auto flex-1 p-6 md:p-8 pt-2">
           <div className="mb-4">
             {processedOutcomes.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {processedOutcomes.map((item) => {
-                  if (!item) return null;
-                  const priceColorClass = getPriceColorClass(item.yesPrice);
+              viewMode === "card" ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {processedOutcomes.map((item) => {
+                    if (!item) return null;
+                    const priceColorClass = getPriceColorClass(item.yesPrice);
 
-                  return (
-                    <div
-                      key={item.id}
-                      className={`flex flex-col justify-between rounded-lg p-4 border border-gray-200 bg-white hover:shadow-md transition-all duration-200 h-full`}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`${item.title}: ${formatOutcomePrice(
-                        item.yesPrice
-                      )}`}
-                    >
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-800 mb-2">
-                          {item.title}
-                        </h4>
+                    return (
+                      <div
+                        key={item.id}
+                        className={`flex flex-col justify-between rounded-lg p-4 border border-gray-200 bg-white hover:shadow-md transition-all duration-200 h-full`}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`${item.title}: ${formatOutcomePrice(
+                          item.yesPrice
+                        )}`}
+                      >
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-800 mb-2">
+                            {item.title}
+                          </h4>
+                        </div>
+                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200 border-opacity-50">
+                          <span className="text-xs text-gray-500">Chance</span>
+                          <span
+                            className={`text-sm font-bold ${priceColorClass}`}
+                          >
+                            {formatOutcomePrice(item.yesPrice)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200 border-opacity-50">
-                        <span className="text-xs text-gray-500">Chance</span>
-                        <span
-                          className={`text-sm font-bold ${priceColorClass}`}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-lg border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                         >
-                          {formatOutcomePrice(item.yesPrice)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                          Outcome
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Chance
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {processedOutcomes.map((item) => {
+                        if (!item) return null;
+                        const priceColorClass = getPriceColorClass(
+                          item.yesPrice
+                        );
+
+                        return (
+                          <tr
+                            key={item.id}
+                            className="hover:bg-gray-50 transition-colors duration-150"
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`${item.title}: ${formatOutcomePrice(
+                              item.yesPrice
+                            )}`}
+                          >
+                            <td className="px-6 py-4 whitespace-normal">
+                              <div className="text-sm font-medium text-gray-900">
+                                {item.title}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <span
+                                className={`text-sm font-bold ${priceColorClass}`}
+                              >
+                                {formatOutcomePrice(item.yesPrice)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
             ) : (
               <p className="text-gray-500 text-center py-4">
                 No outcomes available
