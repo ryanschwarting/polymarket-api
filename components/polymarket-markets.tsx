@@ -175,7 +175,7 @@ function OutcomesModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm overflow-hidden"
       onClick={handleBackdropClick}
     >
-      <div className="relative w-full max-w-lg bg-white shadow-xl rounded-xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="relative w-full max-w-4xl bg-white shadow-xl rounded-xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Modal header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
           <h3 className="text-lg font-semibold text-gray-900">
@@ -212,10 +212,10 @@ function OutcomesModal({
         )}
 
         {/* Modal content - Fixed the overflow issue by ensuring proper scrolling */}
-        <div className="overflow-y-auto flex-1 p-6">
+        <div className="overflow-y-auto flex-1 p-6 md:p-8">
           <div className="mb-4">
             {processedOutcomes.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {processedOutcomes.map((item) => {
                   if (!item) return null;
                   const priceColorClass = getPriceColorClass(item.yesPrice);
@@ -231,7 +231,7 @@ function OutcomesModal({
                       )}`}
                     >
                       <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-800 line-clamp-2 mb-2">
+                        <h4 className="text-sm font-medium text-gray-800 mb-2">
                           {item.title}
                         </h4>
                       </div>
