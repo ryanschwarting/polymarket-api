@@ -61,6 +61,115 @@ interface MarketsResponse {
   totalMarkets: number;
 }
 
+// Shared utility functions
+const formatOutcomePrice = (price: number): string => {
+  return `${(price * 100).toFixed(1)}%`;
+};
+
+const getPriceColorClass = (price: number): string => {
+  if (price > 0.5) return "text-green-600";
+  if (price > 0.2) return "text-amber-600";
+  if (price > 0.05) return "text-orange-600";
+  return "text-red-600";
+};
+
+const getFavoriteOutcome = (
+  market: Market
+): { outcome: string; price: number } | null => {
+  // For markets with nested markets (like NBA Champion)
+  if (market.nestedMarkets && market.nestedMarkets.length > 0) {
+    let highestPrice = 0;
+    let favoriteOutcome = "";
+
+    // Process each nested market to extract team name and probability
+    market.nestedMarkets.forEach((nestedMarket) => {
+      // Get the team name
+      const teamName =
+        nestedMarket.groupItemTitle ||
+        (nestedMarket.question ? nestedMarket.question.replace("?", "") : "");
+
+      if (!teamName) return; // Skip if no team name
+
+      // Extract the probability (yesPrice)
+      let yesPrice = 0;
+
+      if (nestedMarket.outcomePrices) {
+        if (
+          Array.isArray(nestedMarket.outcomePrices) &&
+          nestedMarket.outcomePrices.length > 0
+        ) {
+          // For array form
+          yesPrice = nestedMarket.outcomePrices[0];
+        } else if (typeof nestedMarket.outcomePrices === "object") {
+          // For object form
+          const pricesObj = nestedMarket.outcomePrices as Record<
+            string,
+            number
+          >;
+          yesPrice =
+            pricesObj["Yes"] ||
+            pricesObj["YES"] ||
+            Object.values(pricesObj)[0] ||
+            0;
+        }
+      }
+
+      // Update the favorite if this team has a higher probability
+      if (yesPrice > highestPrice) {
+        highestPrice = yesPrice;
+        favoriteOutcome = teamName;
+      }
+    });
+
+    return highestPrice > 0
+      ? { outcome: favoriteOutcome, price: highestPrice }
+      : null;
+  }
+
+  // For direct outcomes (non-nested markets)
+  if (!market.outcomes || !market.outcomePrices) return null;
+
+  let highestPrice = 0;
+  let favoriteOutcome = "";
+
+  // For sports markets, we want to find the team with the highest probability
+  // Skip outcomes like "No" or "Yes" which aren't actual teams
+  const isTeamMarket = market.category === "Sports";
+
+  if (Array.isArray(market.outcomePrices)) {
+    // Handle array of prices
+    market.outcomePrices.forEach((price, index) => {
+      if (market.outcomes && market.outcomes[index]) {
+        const outcome = market.outcomes[index];
+        // Skip simple Yes/No outcomes in sports markets
+        if (isTeamMarket && (outcome === "Yes" || outcome === "No")) {
+          return;
+        }
+        if (price > highestPrice) {
+          highestPrice = price;
+          favoriteOutcome = outcome;
+        }
+      }
+    });
+  } else {
+    // Handle record of prices
+    Object.entries(market.outcomePrices).forEach(([outcome, price]) => {
+      // Skip simple Yes/No outcomes in sports markets
+      if (isTeamMarket && (outcome === "Yes" || outcome === "No")) {
+        return;
+      }
+      if (price > highestPrice) {
+        highestPrice = price;
+        favoriteOutcome = outcome;
+      }
+    });
+  }
+
+  return highestPrice > 0
+    ? { outcome: favoriteOutcome, price: highestPrice }
+    : null;
+};
+
 // Modal component for displaying outcomes
 function OutcomesModal({
   isOpen,
@@ -71,22 +180,11 @@ function OutcomesModal({
   onClose: () => void;
   market: Market;
 }) {
-  const [viewMode, setViewMode] = React.useState<"card" | "list">("card");
+  const [viewMode, setViewMode] = React.useState<"card" | "list">("list");
 
   if (!isOpen) return null;
 
-  // Helper function to format outcome price
-  const formatOutcomePrice = (price: number): string => {
-    return `${(price * 100).toFixed(1)}%`;
-  };
-
-  // Helper function to determine text color based on price
-  const getPriceColorClass = (price: number): string => {
-    if (price > 0.5) return "text-green-600";
-    if (price > 0.2) return "text-amber-600";
-    if (price > 0.05) return "text-orange-600";
-    return "text-red-600";
-  };
+  // Helper functions moved to parent component
 
   // Handle click on the backdrop to close the modal
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -869,6 +967,30 @@ export default function PolymarketMarkets({
 
                         {/* Market Stats */}
                         <div className="grid grid-cols-2 gap-3 mb-4">
+                          {/* Current Favorite Display */}
+                          {getFavoriteOutcome(market) && (
+                            <div className="col-span-2 mb-4">
+                              <div className="flex flex-col">
+                                <p className="text-sm text-gray-700 font-medium mb-1">
+                                  Current Favorite
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-base font-semibold text-gray-900 truncate pr-2">
+                                    {getFavoriteOutcome(market)?.outcome}
+                                  </h4>
+                                  <p
+                                    className={`text-lg font-bold ${getPriceColorClass(
+                                      getFavoriteOutcome(market)?.price || 0
+                                    )}`}
+                                  >
+                                    {formatOutcomePrice(
+                                      getFavoriteOutcome(market)?.price || 0
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           <div className="bg-blue-50 rounded-lg p-2">
                             <div className="flex items-center justify-between">
                               <p className="text-xs text-blue-700 font-medium">
