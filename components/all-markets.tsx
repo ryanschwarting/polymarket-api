@@ -7,6 +7,7 @@ import KalshiMarkets from "@/components/kalshi-markets";
 import SearchBar from "@/components/ui/SearchBar";
 import SortButton from "@/components/ui/SortButton";
 import FilterButton from "@/components/ui/FilterButton";
+import ScrollToTop from "@/components/ui/scroll-to-top";
 
 export default function AllMarkets() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -151,6 +152,7 @@ export default function AllMarkets() {
           />
         </TabsContent>
       </Tabs>
+      <ScrollToTop />
     </div>
   );
 }
