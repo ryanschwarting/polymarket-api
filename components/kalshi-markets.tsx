@@ -313,8 +313,8 @@ function AllOptionsModal({
         {/* Current favorite section */}
         {eventGroup.markets.length > 0 && (
           <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">Current favorite:</span>{" "}
+            <p className="text-sm sm:text-base text-black font-medium">
+              <span>Current favorite:</span>{" "}
               <span
                 className={`${getPriceColorClass(
                   getMostLikelyOutcome(eventGroup.markets)?.yes_bid || 0
@@ -380,23 +380,35 @@ function AllOptionsModal({
                   </div>
 
                   {/* Market Stats */}
-                  <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-2">
-                    <div className="bg-blue-50 rounded-md px-2 py-1">
-                      <p className="text-xs text-blue-700">Volume</p>
-                      <p className="text-sm font-semibold text-blue-900">
-                        {formatCurrency(market.volume)}
-                      </p>
+                  <div className="grid grid-cols-2 gap-3 px-4 pb-4">
+                    <div className="bg-blue-50 rounded-lg p-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-blue-700 font-medium">
+                          Volume
+                        </p>
+                        <p className="text-sm font-bold text-blue-900">
+                          {formatCurrency(market.volume)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="bg-indigo-50 rounded-md px-2 py-1">
-                      <p className="text-xs text-indigo-700">Liquidity</p>
-                      <p className="text-sm font-semibold text-indigo-900">
-                        {formatCurrency(market.liquidity)}
-                      </p>
+                    <div className="bg-purple-50 rounded-lg p-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-purple-700 font-medium">
+                          Liquidity
+                        </p>
+                        <p className="text-sm font-bold text-purple-900">
+                          {formatCurrency(market.liquidity)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Expires</p>
-                      <p className="text-xs font-medium text-gray-900">
-                        {formatDate(market.expiration_time)}
+                  </div>
+
+                  {/* Market close time */}
+                  <div className="px-4 pb-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-500">Closes:</p>
+                      <p className="text-xs font-medium text-gray-600">
+                        {formatDate(market.close_time)}
                       </p>
                     </div>
                   </div>
@@ -865,7 +877,7 @@ export default function KalshiMarkets({
                         {/* Event Header */}
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-gray-200">
                           <div>
-                            <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                            <h2 className="text-base font-semibold text-gray-900 line-clamp-2 h-[50px]">
                               {eventGroup.eventTitle}
                             </h2>
                             <div className="flex flex-wrap items-center mt-2 gap-2">
@@ -879,105 +891,111 @@ export default function KalshiMarkets({
                           </div>
                         </div>
 
+                        {/* Current Favorite Section */}
+                        <div className="p-4">
+                          <div className="text-sm sm:text-base text-black h-10">
+                            <span className="font-medium">
+                              Current Favorite:
+                            </span>{" "}
+                            {(() => {
+                              const mostLikelyMarket = getMostLikelyMarket(
+                                eventGroup.markets
+                              );
+                              return (
+                                <span className="text-black font-medium">
+                                  {mostLikelyMarket?.yes_sub_title ||
+                                    mostLikelyMarket?.option_name ||
+                                    mostLikelyMarket?.title ||
+                                    "Unknown"}
+                                  {mostLikelyMarket?.yes_bid &&
+                                    ` (${Math.round(
+                                      mostLikelyMarket.yes_bid
+                                    )}% chance)`}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
                         {/* Market Stats */}
-                        <div className="grid grid-cols-2 gap-3 p-4">
+                        <div className="grid grid-cols-2 gap-3 px-4 pb-4">
                           <div className="bg-blue-50 rounded-lg p-2">
-                            <p className="text-xs text-blue-700 font-medium">
-                              Volume
-                            </p>
-                            <p className="text-sm font-bold text-blue-900">
-                              {formatCurrency(eventGroup.totalVolume)}
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-blue-700 font-medium">
+                                Volume
+                              </p>
+                              <p className="text-sm font-bold text-blue-900">
+                                {formatCurrency(eventGroup.totalVolume)}
+                              </p>
+                            </div>
                           </div>
                           <div className="bg-purple-50 rounded-lg p-2">
-                            <p className="text-xs text-purple-700 font-medium">
-                              Liquidity
-                            </p>
-                            <p className="text-sm font-bold text-purple-900">
-                              {formatCurrency(eventGroup.totalLiquidity)}
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-purple-700 font-medium">
+                                Liquidity
+                              </p>
+                              <p className="text-sm font-bold text-purple-900">
+                                {formatCurrency(eventGroup.totalLiquidity)}
+                              </p>
+                            </div>
                           </div>
                         </div>
 
                         {/* Preview of first market when collapsed */}
                         <div className="p-4 border-t border-gray-200 bg-gray-50">
-                          <div className="flex flex-col space-y-2">
-                            <div className="text-sm text-gray-600">
-                              <span className="font-medium">
-                                Current Favorite:
-                              </span>{" "}
-                              {(() => {
-                                const mostLikelyMarket = getMostLikelyMarket(
-                                  eventGroup.markets
-                                );
-                                return (
-                                  <span className="text-gray-800">
-                                    {mostLikelyMarket?.yes_sub_title ||
-                                      mostLikelyMarket?.option_name ||
-                                      mostLikelyMarket?.title ||
-                                      "Unknown"}
-                                    {mostLikelyMarket?.yes_bid &&
-                                      ` (${Math.round(
-                                        mostLikelyMarket.yes_bid
-                                      )}% chance)`}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                            <div className="flex pt-2 justify-between">
-                              <button
-                                onClick={() => toggleEventExpansion(eventGroup)}
-                                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
+                          <div className="flex justify-between">
+                            <button
+                              onClick={() => toggleEventExpansion(eventGroup)}
+                              className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 mr-1.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
                               >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-4 w-4 mr-1.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={1.5}
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={1.5}
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                  />
-                                </svg>
-                                {selectedEventGroup === eventGroup
-                                  ? "Hide Markets"
-                                  : "See Outcome Odds"}
-                              </button>
-                              <a
-                                href={`https://kalshi.com/events/${
-                                  getMostLikelyMarket(eventGroup.markets).ticker
-                                }`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                              {selectedEventGroup === eventGroup
+                                ? "Hide Markets"
+                                : "See Outcome Odds"}
+                            </button>
+                            <a
+                              href={`https://kalshi.com/events/${
+                                getMostLikelyMarket(eventGroup.markets).ticker
+                              }`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none"
+                            >
+                              View on Kalshi
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 ml-1.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
                               >
-                                View on Kalshi
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-4 w-4 ml-1.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={1.5}
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                  />
-                                </svg>
-                              </a>
-                            </div>
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                />
+                              </svg>
+                            </a>
                           </div>
                         </div>
 

@@ -236,9 +236,7 @@ function OutcomesModal({
                         </h4>
                       </div>
                       <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200 border-opacity-50">
-                        <span className="text-xs text-gray-500">
-                          Probability
-                        </span>
+                        <span className="text-xs text-gray-500">Chance</span>
                         <span
                           className={`text-sm font-bold ${priceColorClass}`}
                         >
