@@ -351,7 +351,7 @@ export async function GET() {
     const seenMarketIds = new Set<string>(); // Track market IDs we've already seen
     const seenTitles = new Set<string>(); // Track market titles we've already seen
     const limit = 100;
-    const maxBatches = 5; // Fetch up to 5 batches (500 markets total)
+    const maxBatches = 10; // Fetch up to 10 batches (1000 markets total)
     let duplicatesSkipped = 0; // Track how many duplicates we skip
 
     // Fetch markets with offset pagination
